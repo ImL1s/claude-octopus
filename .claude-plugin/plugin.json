@@ -1,7 +1,7 @@
 {
   "name": "octo",
-  "version": "8.41.0",
-  "description": "Multi-tentacled orchestrator using Double Diamond methodology. (v8.41.0) Feature adoption: 3 new hooks, 10 native agents, command consolidation, auto-memory, data-driven flags. 32 expert personas, 38 commands, 50 skills. Commands '/octo:*'. Run /octo:setup for guided setup.",
+  "version": "8.42.0",
+  "description": "Multi-tentacled orchestrator using Double Diamond methodology. (v8.42.0) Workflow compliance, anti-injection nonces, interactive next-steps, Multi-LLM debate gates. 32 expert personas, 38 commands, 50 skills. Commands '/octo:*'. Run /octo:setup for guided setup.",
   "author": {
     "name": "nyldn"
   },
