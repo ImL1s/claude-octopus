@@ -15,7 +15,7 @@ All commands use the `/octo:` namespace.
 | `/octo:setup` | Check setup status and configure providers |
 | `/octo:dev` | Switch to Dev Work mode |
 | `/octo:km` | Toggle Knowledge Work mode |
-| `/octo:sys-setup` | Full setup command |
+| `/octo:sys-setup` | Alias for `/octo:setup` |
 | `/octo:model-config` | Configure provider model selection |
 | `/octo:doctor` | Environment diagnostics with 9 check categories |
 
