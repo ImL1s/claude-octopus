@@ -11,7 +11,7 @@
     {
       "name": "claude-octopus",
       "source": "./",
-      "description": "v8.53.0 - Agent ergonomics: readonly frontmatter, user-scope agents (~/.claude/agents/), /octo:resume. 32 personas, 39 commands, 50 skills. Run /octo:setup.",
+      "description": "v8.53.0 - Agent ergonomics: readonly frontmatter, user-scope agents, /octo:resume. 32 personas, 39 commands, 50 skills. Run /octo:setup.",
       "version": "8.53.0",
       "author": {
         "name": "nyldn"
