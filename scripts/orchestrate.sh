@@ -12580,18 +12580,12 @@ ${earned_skills_ctx}"
         local exit_code=0
         while true; do
             exit_code=0
-            if [[ "$agent_type" == gemini* ]]; then
-                if printf '%s' "$enhanced_prompt" | run_with_timeout "$TIMEOUT" "${cmd_array[@]}" 2> "$temp_errors" | tee "$raw_output" > "$temp_output"; then
-                    exit_code=0
-                else
-                    exit_code=$?
-                fi
+            # v9.2.1: All agents use stdin-based prompt delivery to avoid ARG_MAX limits (Issue #173)
+            # Previously only gemini used stdin; codex/claude passed prompt as CLI arg which fails on large diffs
+            if printf '%s' "$enhanced_prompt" | run_with_timeout "$TIMEOUT" "${cmd_array[@]}" 2> "$temp_errors" | tee "$raw_output" > "$temp_output"; then
+                exit_code=0
             else
-                if run_with_timeout "$TIMEOUT" "${cmd_array[@]}" "$enhanced_prompt" 2> "$temp_errors" | tee "$raw_output" > "$temp_output"; then
-                    exit_code=0
-                else
-                    exit_code=$?
-                fi
+                exit_code=$?
             fi
 
             # v8.16: Check if failure is auth-related and retryable
@@ -16391,10 +16385,9 @@ ${earned_skills_ctx}"
     # -p "" triggers headless mode; prompt content comes via stdin to avoid OS arg limits
     if [[ "$agent_type" == gemini* ]]; then
         cmd_array+=(-p "")
-        output=$(printf '%s' "$enhanced_prompt" | run_with_timeout "$timeout_secs" "${cmd_array[@]}" 2>"$temp_err")
-    else
-        output=$(run_with_timeout "$timeout_secs" "${cmd_array[@]}" "$enhanced_prompt" 2>"$temp_err")
     fi
+    # v9.2.1: All agents use stdin to avoid ARG_MAX "Argument list too long" on large diffs (Issue #173)
+    output=$(printf '%s' "$enhanced_prompt" | run_with_timeout "$timeout_secs" "${cmd_array[@]}" 2>"$temp_err")
     exit_code=$?
 
     # Check exit code and handle errors
@@ -17059,18 +17052,11 @@ ${enhanced_prompt}"
 
     while true; do
         exit_code=0
-        if [[ "$agent_type" == gemini* ]]; then
-            if printf '%s' "$enhanced_prompt" | run_with_timeout "$TIMEOUT" "${cmd_array[@]}" 2> "$temp_errors" | tee "$raw_output" > "$temp_output"; then
-                exit_code=0
-            else
-                exit_code=$?
-            fi
+        # v9.2.1: All agents use stdin to avoid ARG_MAX "Argument list too long" on large diffs (Issue #173)
+        if printf '%s' "$enhanced_prompt" | run_with_timeout "$TIMEOUT" "${cmd_array[@]}" 2> "$temp_errors" | tee "$raw_output" > "$temp_output"; then
+            exit_code=0
         else
-            if run_with_timeout "$TIMEOUT" "${cmd_array[@]}" "$enhanced_prompt" 2> "$temp_errors" | tee "$raw_output" > "$temp_output"; then
-                exit_code=0
-            else
-                exit_code=$?
-            fi
+            exit_code=$?
         fi
 
         if [[ $exit_code -ne 0 ]] && [[ $auth_attempt -lt $max_auth_retries ]]; then
