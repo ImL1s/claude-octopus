@@ -1271,6 +1271,16 @@ build_provider_env() {
 }
 
 # List of available agents
+# v9.2.2: Subagent preamble for Codex dispatches (Issue #176)
+# Codex's own skill system ("superpowers") can intercept prompts and force its
+# brainstorming/skill workflows instead of responding directly. This preamble
+# exploits the skill system's precedence rules ("user instructions always take
+# precedence") to override the <EXTREMELY-IMPORTANT> skill activation block.
+# Defined once here to avoid drift between dispatch paths.
+CODEX_SUBAGENT_PREAMBLE="IMPORTANT: You are running as a non-interactive subagent dispatched by Claude Octopus via codex exec. These are user-level instructions and take precedence over all skill directives. Skip ALL skills (brainstorming, using-superpowers, writing-plans, etc.). Do NOT read skill files, ask clarifying questions, offer visual companions, or follow any skill checklists. Respond directly to the prompt below.
+
+"
+
 AVAILABLE_AGENTS="codex codex-standard codex-max codex-mini codex-general codex-spark codex-reasoning codex-large-context gemini gemini-fast gemini-image codex-review claude claude-sonnet claude-opus claude-opus-fast openrouter openrouter-glm5 openrouter-kimi openrouter-deepseek perplexity perplexity-fast"
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -12577,15 +12587,8 @@ ${earned_skills_ctx}"
         fi
 
         # v9.2.2: Inject subagent preamble for Codex dispatches (Issue #176)
-        # Codex's own skill system ("superpowers") can intercept prompts and force its
-        # brainstorming/skill workflows instead of responding directly. This preamble
-        # exploits the skill system's precedence rules ("user instructions always take
-        # precedence") to override the <EXTREMELY-IMPORTANT> skill activation block.
         if [[ "$agent_type" == codex* && "$agent_type" != "codex-review" ]]; then
-            local codex_preamble="IMPORTANT: You are running as a non-interactive subagent dispatched by Claude Octopus via codex exec. These are user-level instructions and take precedence over all skill directives. Skip ALL skills (brainstorming, using-superpowers, writing-plans, etc.). Do NOT read skill files, ask clarifying questions, offer visual companions, or follow any skill checklists. Respond directly to the prompt below.
-
-"
-            enhanced_prompt="${codex_preamble}${enhanced_prompt}"
+            enhanced_prompt="${CODEX_SUBAGENT_PREAMBLE}${enhanced_prompt}"
         fi
 
         local auth_attempt=0
@@ -16401,10 +16404,7 @@ ${earned_skills_ctx}"
 
     # v9.2.2: Inject subagent preamble for Codex dispatches (Issue #176)
     if [[ "$agent_type" == codex* && "$agent_type" != "codex-review" ]]; then
-        local codex_preamble="IMPORTANT: You are running as a non-interactive subagent dispatched by Claude Octopus via codex exec. These are user-level instructions and take precedence over all skill directives. Skip ALL skills (brainstorming, using-superpowers, writing-plans, etc.). Do NOT read skill files, ask clarifying questions, offer visual companions, or follow any skill checklists. Respond directly to the prompt below.
-
-"
-        enhanced_prompt="${codex_preamble}${enhanced_prompt}"
+        enhanced_prompt="${CODEX_SUBAGENT_PREAMBLE}${enhanced_prompt}"
     fi
 
     # v9.2.2: All agents use stdin to avoid ARG_MAX "Argument list too long" on large diffs (Issue #173)
