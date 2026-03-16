@@ -1276,6 +1276,16 @@ build_provider_env() {
 }
 
 # List of available agents
+# v9.2.2: Subagent preamble for Codex dispatches (Issue #176)
+# Codex's own skill system ("superpowers") can intercept prompts and force its
+# brainstorming/skill workflows instead of responding directly. This preamble
+# exploits the skill system's precedence rules ("user instructions always take
+# precedence") to override the <EXTREMELY-IMPORTANT> skill activation block.
+# Defined once here to avoid drift between dispatch paths.
+CODEX_SUBAGENT_PREAMBLE="IMPORTANT: You are running as a non-interactive subagent dispatched by Claude Octopus via codex exec. These are user-level instructions and take precedence over all skill directives. Skip ALL skills (brainstorming, using-superpowers, writing-plans, etc.). Do NOT read skill files, ask clarifying questions, offer visual companions, or follow any skill checklists. Respond directly to the prompt below.
+
+"
+
 AVAILABLE_AGENTS="codex codex-standard codex-max codex-mini codex-general codex-spark codex-reasoning codex-large-context gemini gemini-fast gemini-image codex-review claude claude-sonnet claude-opus claude-opus-fast openrouter openrouter-glm5 openrouter-kimi openrouter-deepseek perplexity perplexity-fast"
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -12642,11 +12652,16 @@ ${earned_skills_ctx}"
             cmd_array+=(-p "")
         fi
 
+        # v9.2.2: Inject subagent preamble for Codex dispatches (Issue #176)
+        if [[ "$agent_type" == codex* && "$agent_type" != "codex-review" ]]; then
+            enhanced_prompt="${CODEX_SUBAGENT_PREAMBLE}${enhanced_prompt}"
+        fi
+
         local auth_attempt=0
         local exit_code=0
         while true; do
             exit_code=0
-            # v9.2.1: All agents use stdin-based prompt delivery to avoid ARG_MAX limits (Issue #173)
+            # v9.2.2: All agents use stdin-based prompt delivery to avoid ARG_MAX limits (Issue #173)
             # Previously only gemini used stdin; codex/claude passed prompt as CLI arg which fails on large diffs
             if printf '%s' "$enhanced_prompt" | run_with_timeout "$TIMEOUT" "${cmd_array[@]}" 2> "$temp_errors" | tee "$raw_output" > "$temp_output"; then
                 exit_code=0
@@ -16452,7 +16467,13 @@ ${earned_skills_ctx}"
     if [[ "$agent_type" == gemini* ]]; then
         cmd_array+=(-p "")
     fi
-    # v9.2.1: All agents use stdin to avoid ARG_MAX "Argument list too long" on large diffs (Issue #173)
+
+    # v9.2.2: Inject subagent preamble for Codex dispatches (Issue #176)
+    if [[ "$agent_type" == codex* && "$agent_type" != "codex-review" ]]; then
+        enhanced_prompt="${CODEX_SUBAGENT_PREAMBLE}${enhanced_prompt}"
+    fi
+
+    # v9.2.2: All agents use stdin to avoid ARG_MAX "Argument list too long" on large diffs (Issue #173)
     output=$(printf '%s' "$enhanced_prompt" | run_with_timeout "$timeout_secs" "${cmd_array[@]}" 2>"$temp_err")
     exit_code=$?
 
@@ -17118,7 +17139,7 @@ ${enhanced_prompt}"
 
     while true; do
         exit_code=0
-        # v9.2.1: All agents use stdin to avoid ARG_MAX "Argument list too long" on large diffs (Issue #173)
+        # v9.2.2: All agents use stdin to avoid ARG_MAX "Argument list too long" on large diffs (Issue #173)
         if printf '%s' "$enhanced_prompt" | run_with_timeout "$TIMEOUT" "${cmd_array[@]}" 2> "$temp_errors" | tee "$raw_output" > "$temp_output"; then
             exit_code=0
         else

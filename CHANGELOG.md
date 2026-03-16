@@ -1,3 +1,13 @@
+# Changelog
+
+## [9.2.2] - 2026-03-16
+
+### Fixed
+
+- **Codex subagent dispatch intercepted by Codex superpowers skill system**: When Codex CLI has "superpowers" skills installed, its skill system intercepts octo's dispatched prompts and forces its own brainstorming workflow instead of responding directly. Fixed by prepending a user-level override preamble to all Codex dispatches that tells the model to skip skills. (#176)
+
+---
+
 ## [9.2.1] - 2026-03-16
 
 ### Fixed
