@@ -492,16 +492,16 @@ The tangle phase includes automatic quality validation:
 - Best practice validation
 - Implementation completeness
 
-### Step 3b: Handle Agent Continuation (v8.30)
+### Step 3b: Handle Agent Continuation (v9.5 / CC v2.1.77+)
 
 When orchestrate.sh output contains `AGENT_TEAMS_RESUME:${agent_id}:${task_id}:${role}:${phase}`:
 
-1. Use the Agent tool with `resume=${agent_id}` parameter instead of spawning a new agent
-2. Pass the iteration prompt from the resume instruction JSON at `~/.claude-octopus/agent-teams/${task_id}.json`
-3. If resume fails (agent not found or GC'd), fall back to creating a new agent with the full prompt from the instruction file
-4. After the Agent tool returns, store the new agentId via: `bridge_store_agent_id(task_id, returned_agent_id)` in the bridge ledger
+1. Send a message to the existing agent using `SendMessage({to: "${agent_id}", message: "<iteration prompt>"})` — this auto-resumes a stopped agent automatically (CC v2.1.77+)
+2. Read the iteration prompt from the resume instruction JSON at `~/.claude-octopus/agent-teams/${task_id}.json`
+3. If SendMessage returns an error (agent GC'd or not found), fall back to creating a new agent with the full prompt from the instruction file
+4. After the agent responds, store its agentId via: `bridge_store_agent_id(task_id, agent_id)` in the bridge ledger
 
-This enables iterative refinement during tangle retries without losing the agent's prior reasoning context.
+Note: The `Agent(resume: ...)` parameter was removed in CC v2.1.77. Always use `SendMessage` for agent continuation.
 
 ### Step 4: Read Results
 
