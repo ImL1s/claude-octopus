@@ -15079,9 +15079,17 @@ preflight_check() {
         init_workspace
     fi
 
+    # Legacy plugin name warning (Issue #196)
+    # Detect if user still has the old "claude-octopus" install alongside or instead of "octo"
+    local claude_plugins_dir="$HOME/.claude/plugins"
+    if [[ -d "$claude_plugins_dir/cache/nyldn-plugins/claude-octopus" ]]; then
+        log WARN "Legacy install detected: 'claude-octopus' (renamed to 'octo' in v9.0)"
+        echo -e "${YELLOW}⚠${NC}  You have a leftover 'claude-octopus' install that causes 'not found in marketplace'."
+        echo -e "   Fix: ${CYAN}claude plugin uninstall claude-octopus && claude plugin install octo@nyldn-plugins${NC}"
+    fi
+
     # Check for potentially conflicting plugins (informational only)
     local conflicts=0
-    local claude_plugins_dir="$HOME/.claude/plugins"
 
     if [[ -d "$claude_plugins_dir/oh-my-claude-code" ]]; then
         log WARN "Detected: oh-my-claude-code (has own cost-aware routing)"
@@ -15445,6 +15453,25 @@ doctor_check_config() {
                 "SUPPORTS_HTTP_HOOKS is false on CC v${cc_ver}" \
                 "Expected true for v2.1.63+; feature detection may have failed"
         fi
+    fi
+
+    # Legacy plugin name detection (Issue #196)
+    # Users who installed as "claude-octopus@nyldn-plugins" (pre-v9.0 name) get
+    # "Plugin claude-octopus not found in marketplace" because the marketplace
+    # now lists the plugin as "octo". Detect this and provide the fix.
+    local legacy_cache_dir="$HOME/.claude/plugins/cache/nyldn-plugins/claude-octopus"
+    if [[ -d "$legacy_cache_dir" ]]; then
+        doctor_add "legacy-plugin-name" "config" "fail" \
+            "Legacy 'claude-octopus' install detected — causes 'not found in marketplace'" \
+            "Fix: claude plugin uninstall claude-octopus && claude plugin install octo@nyldn-plugins"
+    elif [[ "$PLUGIN_DIR" == *"/claude-octopus"* && "$PLUGIN_DIR" != *"/claude-octopus/"*"octo"* ]]; then
+        # Catch installs where the directory name contains the old name
+        doctor_add "legacy-plugin-name" "config" "warn" \
+            "Plugin path contains legacy name 'claude-octopus'" \
+            "If you see 'not found in marketplace': claude plugin uninstall claude-octopus && claude plugin install octo@nyldn-plugins"
+    else
+        doctor_add "legacy-plugin-name" "config" "pass" \
+            "Plugin name: octo (correct)" ""
     fi
 
     # OCTOPUS_BACKEND correctly detected
