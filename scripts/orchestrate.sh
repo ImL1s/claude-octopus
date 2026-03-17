@@ -41,6 +41,11 @@ source "${SCRIPT_DIR}/provider-router.sh"
 # Source agent teams bridge (v8.7.0)
 source "${SCRIPT_DIR}/agent-teams-bridge.sh"
 
+# Source Wave 1 extractions (v9.3.0 decomposition)
+source "${SCRIPT_DIR}/lib/utils.sh" 2>/dev/null || true
+source "${SCRIPT_DIR}/lib/similarity.sh" 2>/dev/null || true
+source "${SCRIPT_DIR}/lib/models.sh" 2>/dev/null || true
+
 # Source intelligence library (v8.20.0)
 source "${SCRIPT_DIR}/lib/intelligence.sh" 2>/dev/null || true
 
@@ -1355,126 +1360,7 @@ get_model_pricing() {
     esac
 }
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# MODEL CATALOG (v8.49.0)
-# Centralized metadata: context window, capabilities, provider, tier, status.
-# Used by capability-aware fallbacks and health checks.
-# Format: context_k|tools|images|reasoning|provider|tier|status
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# Get model capabilities metadata
-# Returns: context_k|tools|images|reasoning|provider|tier|status
-get_model_catalog() {
-    local model="$1"
-    case "$model" in
-        # OpenAI GPT-5.x
-        gpt-5.4)                echo "400|yes|yes|no|codex|premium|active" ;;
-        gpt-5.4-pro)            echo "400|yes|yes|no|codex|premium|active" ;;
-        gpt-5.3-codex)          echo "400|yes|yes|no|codex|standard|active" ;;
-        gpt-5.3-codex-spark)    echo "128|yes|no|no|codex|standard|active" ;;
-        gpt-5.2-codex)          echo "400|yes|yes|no|codex|standard|active" ;;
-        gpt-5-codex-mini)       echo "400|yes|no|no|codex|budget|active" ;;
-        gpt-5.1-codex-mini)     echo "400|yes|no|no|codex|budget|active" ;;
-        gpt-5.1-codex-max)      echo "400|yes|yes|no|codex|standard|active" ;;
-        # Reasoning models
-        o3)                     echo "200|yes|no|yes|codex|premium|active" ;;
-        o3-pro)                 echo "200|yes|no|yes|codex|premium|active" ;;
-        o3-mini)                echo "200|yes|no|yes|codex|budget|active" ;;
-        # Gemini
-        gemini-3.1-pro-preview)   echo "1000|yes|yes|no|gemini|premium|active" ;;
-        gemini-3-flash-preview) echo "1000|yes|no|no|gemini|budget|active" ;;
-        gemini-3-pro-image-preview) echo "1000|yes|yes|no|gemini|premium|active" ;;
-        # Claude
-        claude-sonnet-4.6)      echo "200|yes|yes|no|claude|standard|active" ;;
-        claude-opus-4.6)        echo "200|yes|yes|yes|claude|premium|active" ;;
-        claude-opus-4.6-fast)   echo "200|yes|yes|yes|claude|premium|active" ;;
-        # OpenRouter
-        z-ai/glm-5)             echo "203|yes|no|no|openrouter|standard|active" ;;
-        moonshotai/kimi-k2.5)   echo "262|yes|yes|no|openrouter|standard|active" ;;
-        deepseek/deepseek-r1)   echo "164|yes|no|yes|openrouter|standard|active" ;;
-        # Perplexity
-        sonar-pro)              echo "128|no|no|no|perplexity|standard|active" ;;
-        sonar)                  echo "128|no|no|no|perplexity|budget|active" ;;
-        # Unknown
-        *)                      echo "128|yes|no|no|unknown|standard|unknown" ;;
-    esac
-}
-
-# Check if a model is known in the catalog
-is_known_model() {
-    local model="$1"
-    local catalog
-    catalog=$(get_model_catalog "$model")
-    local status="${catalog##*|}"
-    [[ "$status" != "unknown" ]]
-}
-
-# Get a specific capability from the catalog
-# Usage: get_model_capability <model> <field>
-# Fields: context_k, tools, images, reasoning, provider, tier, status
-get_model_capability() {
-    local model="$1"
-    local field="$2"
-    local catalog
-    catalog=$(get_model_catalog "$model")
-
-    case "$field" in
-        context_k) echo "$catalog" | cut -d'|' -f1 ;;
-        tools)     echo "$catalog" | cut -d'|' -f2 ;;
-        images)    echo "$catalog" | cut -d'|' -f3 ;;
-        reasoning) echo "$catalog" | cut -d'|' -f4 ;;
-        provider)  echo "$catalog" | cut -d'|' -f5 ;;
-        tier)      echo "$catalog" | cut -d'|' -f6 ;;
-        status)    echo "$catalog" | cut -d'|' -f7 ;;
-    esac
-}
-
-# List all known models for a provider, optionally filtered by capability
-# Usage: list_models [provider] [--tools] [--images] [--reasoning] [--tier budget|standard|premium]
-list_models() {
-    local filter_provider="${1:-}"
-    shift || true
-    local require_tools="" require_images="" require_reasoning="" require_tier=""
-    for arg in "$@"; do
-        case "$arg" in
-            --tools) require_tools="yes" ;;
-            --images) require_images="yes" ;;
-            --reasoning) require_reasoning="yes" ;;
-            --tier) require_tier="$2"; shift ;;
-        esac
-    done
-
-    local -a all_models=(
-        gpt-5.4 gpt-5.4-pro gpt-5.3-codex gpt-5.2-codex
-        gpt-5-codex-mini gpt-5.1-codex-max
-        o3 o3-pro o3-mini
-        gemini-3.1-pro-preview gemini-3-flash-preview gemini-3-pro-image-preview
-        claude-sonnet-4.6 claude-opus-4.6 claude-opus-4.6-fast
-        z-ai/glm-5 moonshotai/kimi-k2.5 deepseek/deepseek-r1
-        sonar-pro sonar
-    )
-
-    for model in "${all_models[@]}"; do
-        local catalog
-        catalog=$(get_model_catalog "$model")
-        local ctx tools images reasoning provider tier status
-        IFS='|' read -r ctx tools images reasoning provider tier status <<< "$catalog"
-
-        # Apply filters
-        [[ -n "$filter_provider" && "$provider" != "$filter_provider" ]] && continue
-        [[ -n "$require_tools" && "$tools" != "yes" ]] && continue
-        [[ -n "$require_images" && "$images" != "yes" ]] && continue
-        [[ -n "$require_reasoning" && "$reasoning" != "yes" ]] && continue
-        [[ -n "$require_tier" && "$tier" != "$require_tier" ]] && continue
-
-        local pricing
-        pricing=$(get_model_pricing "$model")
-        local in_price="${pricing%%:*}"
-        local out_price="${pricing##*:}"
-        printf "%-25s %5sK  tools=%-3s img=%-3s rsn=%-3s  \$%s/\$%s MTok  [%s]\n" \
-            "$model" "$ctx" "$tools" "$images" "$reasoning" "$in_price" "$out_price" "$tier"
-    done
-}
+# Extracted to lib/models.sh: get_model_catalog, is_known_model, get_model_capability, list_models
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PRE-DISPATCH HEALTH CHECKS (v8.49.0)
@@ -1935,72 +1821,7 @@ get_effort_level() {
 OCTOPUS_CONVERGENCE_ENABLED="${OCTOPUS_CONVERGENCE_ENABLED:-false}"
 OCTOPUS_CONVERGENCE_THRESHOLD="${OCTOPUS_CONVERGENCE_THRESHOLD:-0.8}"
 
-extract_headings() {
-    local file="$1"
-    grep '^#' "$file" 2>/dev/null | tr '[:upper:]' '[:lower:]' | sort -u || true
-}
-
-# Jaccard similarity using loops (bash 3.2 compatible - no comm/paste)
-jaccard_similarity() {
-    local set_a="$1"
-    local set_b="$2"
-
-    [[ -z "$set_a" || -z "$set_b" ]] && echo "0" && return
-
-    local -a arr_a arr_b
-    local intersection=0
-    local union_count=0
-
-    # Read sets into arrays
-    while IFS= read -r line; do arr_a+=("$line"); done <<< "$set_a"
-    while IFS= read -r line; do arr_b+=("$line"); done <<< "$set_b"
-
-    # Count intersection
-    for a in "${arr_a[@]}"; do
-        for b in "${arr_b[@]}"; do
-            if [[ "$a" == "$b" ]]; then
-                intersection=$((intersection + 1))
-                break
-            fi
-        done
-    done
-
-    # Union = |A| + |B| - |intersection|
-    union_count=$(( ${#arr_a[@]} + ${#arr_b[@]} - intersection ))
-    [[ $union_count -eq 0 ]] && echo "0" && return
-
-    awk -v i="$intersection" -v u="$union_count" 'BEGIN { printf "%.2f", i / u }'
-}
-
-check_convergence() {
-    local result_pattern="$1"
-
-    [[ "$OCTOPUS_CONVERGENCE_ENABLED" != "true" ]] && return 1
-
-    local files=()
-    for f in $result_pattern; do
-        [[ -f "$f" ]] && files+=("$f")
-    done
-
-    [[ ${#files[@]} -lt 2 ]] && return 1
-
-    local converged=0
-    local i j
-    for (( i=0; i < ${#files[@]}; i++ )); do
-        for (( j=i+1; j < ${#files[@]}; j++ )); do
-            local headings_a headings_b sim
-            headings_a=$(extract_headings "${files[$i]}")
-            headings_b=$(extract_headings "${files[$j]}")
-            sim=$(jaccard_similarity "$headings_a" "$headings_b")
-            if awk -v s="$sim" -v t="$OCTOPUS_CONVERGENCE_THRESHOLD" 'BEGIN { exit !(s >= t) }'; then
-                converged=$((converged + 1))
-            fi
-        done
-    done
-
-    [[ $converged -ge 1 ]] && return 0
-    return 1
-}
+# Extracted to lib/similarity.sh: extract_headings, jaccard_similarity, check_convergence
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PERFORMANCE: Semantic probe cache (v8.7.0)
@@ -2010,31 +1831,7 @@ check_convergence() {
 OCTOPUS_SEMANTIC_CACHE="${OCTOPUS_SEMANTIC_CACHE:-false}"
 OCTOPUS_CACHE_SIMILARITY_THRESHOLD="${OCTOPUS_CACHE_SIMILARITY_THRESHOLD:-0.7}"
 
-generate_bigrams() {
-    local text="$1"
-    # Normalize: lowercase, remove punctuation, split into words
-    local words
-    words=$(echo "$text" | tr '[:upper:]' '[:lower:]' | tr -cs '[:alnum:]' ' ' | tr -s ' ')
-
-    local -a word_arr
-    read -ra word_arr <<< "$words"
-
-    local i
-    for (( i=0; i < ${#word_arr[@]} - 1; i++ )); do
-        echo "${word_arr[$i]} ${word_arr[$((i+1))]}"
-    done
-}
-
-bigram_similarity() {
-    local text_a="$1"
-    local text_b="$2"
-
-    local bigrams_a bigrams_b
-    bigrams_a=$(generate_bigrams "$text_a")
-    bigrams_b=$(generate_bigrams "$text_b")
-
-    jaccard_similarity "$bigrams_a" "$bigrams_b"
-}
+# Extracted to lib/similarity.sh: generate_bigrams, bigram_similarity
 
 check_cache_semantic() {
     local prompt="$1"
@@ -7190,154 +6987,8 @@ synthesize_probe_results_partial() {
 # Avoids spawning grep|cut subprocesses (saves ~100ms per call)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Extract a single JSON field value using bash regex (no subprocesses)
-# Usage: json_extract "$json_string" "fieldname" -> sets REPLY variable
-# Returns 0 if found, 1 if not found
-json_extract() {
-    local json="$1"
-    local field="$2"
-    REPLY=""
-
-    # Use bash regex to extract field value (handles quoted strings)
-    if [[ "$json" =~ \"$field\":\"([^\"]+)\" ]]; then
-        REPLY="${BASH_REMATCH[1]}"
-        return 0
-    fi
-    return 1
-}
-
-# Extract multiple JSON fields at once (single pass, no subprocesses)
-# Usage: json_extract_multi "$json_string" field1 field2 field3
-# Sets variables: _field1, _field2, _field3
-# Uses bash nameref (4.3+) to avoid command injection via eval
-json_extract_multi() {
-    local json="$1"
-    shift
-
-    for field in "$@"; do
-        local -n ref="_$field"
-        if [[ "$json" =~ \"$field\":\"([^\"]+)\" ]]; then
-            ref="${BASH_REMATCH[1]}"
-        else
-            ref=""
-        fi
-    done
-}
-
-# Validate output file path to prevent path traversal attacks
-# Returns resolved path on success, exits with error on failure
-validate_output_file() {
-    local file="$1"
-    local resolved
-
-    # Resolve to absolute path
-    resolved=$(realpath "$file" 2>/dev/null) || {
-        log ERROR "Invalid file path: $file"
-        return 1
-    }
-
-    # Must be under RESULTS_DIR
-    if [[ "$resolved" != "$RESULTS_DIR"/* ]]; then
-        log ERROR "File path outside results directory: $file"
-        return 1
-    fi
-
-    # File must exist
-    if [[ ! -f "$resolved" ]]; then
-        log ERROR "File not found: $file"
-        return 1
-    fi
-
-    echo "$resolved"
-    return 0
-}
-
-# Sanitize review ID to prevent sed injection
-# Only allows alphanumeric, hyphen, and underscore characters
-sanitize_review_id() {
-    local id="$1"
-
-    # Only allow alphanumeric, hyphen, underscore
-    if [[ ! "$id" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-        log ERROR "Invalid review ID format: $id"
-        return 1
-    fi
-
-    echo "$id"
-    return 0
-}
-
-# Validate agent command to prevent command injection
-# Only allows whitelisted command prefixes
-validate_agent_command() {
-    local cmd="$1"
-
-    # Whitelist of allowed command prefixes (v7.19.0: tightened to exact patterns)
-    case "$cmd" in
-        "codex "*|"codex")
-            return 0 ;;
-        "gemini "*|"gemini")
-            return 0 ;;
-        "claude "*|"claude")
-            return 0 ;;
-        "openrouter_execute"*) # openrouter_execute and openrouter_execute_model
-            return 0 ;;
-        "perplexity_execute"*) # v8.24.0: Perplexity Sonar API (Issue #22)
-            return 0 ;;
-        "env NODE_NO_WARNINGS="*) # only allow env with NODE_NO_WARNINGS prefix
-            return 0 ;;
-        *)
-            log ERROR "Invalid agent command: $cmd"
-            return 1
-            ;;
-    esac
-}
-
-# v8.41.0: Anti-injection nonce wrapper for untrusted content
-# Wraps external/file-sourced content in random boundary tokens to prevent
-# prompt injection from memory files, earned skills, or provider history.
-# The nonce is a random hex string that cannot be predicted or forged.
-# This is purely internal — users never see the nonces.
-# Args: $1=content, $2=label (e.g. "memory", "earned-skills")
-# Returns: content wrapped in nonce boundaries
-sanitize_external_content() {
-    local content="$1"
-    local label="${2:-external}"
-
-    [[ -z "$content" ]] && return
-
-    # Generate random 16-char hex nonce
-    local nonce
-    nonce=$(head -c 8 /dev/urandom 2>/dev/null | od -An -tx1 | tr -d ' \n' 2>/dev/null) || nonce="$(date +%s%N)"
-
-    echo "<!-- BEGIN-UNTRUSTED:${label}:${nonce} -->
-${content}
-<!-- END-UNTRUSTED:${label}:${nonce} -->"
-}
-
-# Properly escape string for JSON
-# Handles all special characters per JSON spec
-json_escape() {
-    local str="$1"
-
-    # Escape in order: backslash first, then other special chars
-    str="${str//\\/\\\\}"     # backslash
-    str="${str//\"/\\\"}"     # double quote
-    str="${str//$'\t'/\\t}"   # tab
-    str="${str//$'\n'/\\n}"   # newline
-    str="${str//$'\r'/\\r}"   # carriage return
-    str="${str//$'\b'/\\b}"   # backspace
-    str="${str//$'\f'/\\f}"   # form feed
-
-    echo "$str"
-}
-
-# Create secure temporary file
-# Returns path to temp file in the secure temp directory
-secure_tempfile() {
-    local prefix="${1:-tmp}"
-    mktemp "${OCTOPUS_TMP_DIR}/${prefix}.XXXXXX"
-}
+# Extracted to lib/utils.sh: json_extract, json_extract_multi, validate_output_file,
+# sanitize_review_id, validate_agent_command, sanitize_external_content, json_escape, secure_tempfile
 
 # Portable timeout function (works on macOS and Linux)
 # Prefers system timeout commands, falls back to manual implementation
