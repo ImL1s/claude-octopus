@@ -1,5 +1,30 @@
 # Changelog
 
+## [9.4.0] - 2026-03-17
+
+### Added
+
+- **Four-way AI debates**: Sonnet now participates as a permanent 4th debater alongside Codex, Gemini, and Claude/Opus. Dispatched via `Agent(model: "sonnet", run_in_background: true)` — runs in parallel, no added latency, no extra cost. Skill version v4.7 → v4.8.
+- **Auto code review + E2E verification**: After any `/octo:develop`, `/octo:embrace`, or `/octo:deliver` workflow completes, two Sonnet agents automatically launch in parallel — one code reviewer, one E2E tester. Findings presented before the "what next?" prompt. No manual request needed.
+- **Monolith guard test**: `tests/smoke/test-monolith-guard.sh` (15 tests) enforces orchestrate.sh line count threshold, lib file existence, no function duplication, and source guards.
+- **Test infrastructure helper**: `tests/helpers/grep-octopus.sh` searches across `orchestrate.sh` + `lib/*.sh` so tests survive function extraction.
+
+### Changed
+
+- **Wave 1 decomposition**: Extracted 3 new lib modules from orchestrate.sh (22,668 → 22,377 lines):
+  - `lib/utils.sh` (183 lines): json_extract, json_escape, sanitize_external_content, validate_agent_command, validate_output_file, sanitize_review_id, secure_tempfile
+  - `lib/similarity.sh` (103 lines): jaccard_similarity, extract_headings, check_convergence, generate_bigrams, bigram_similarity
+  - `lib/models.sh` (129 lines): get_model_catalog, is_known_model, get_model_capability, list_models
+
+### Fixed
+
+- **`list_models --tier` parsing bug**: `shift` inside a `for` loop produced wrong results. Replaced with proper `while [[ $# -gt 0 ]]` pattern.
+- **`log()` forward-reference in utils.sh**: Extracted functions called `log()` before it was defined. Added `_utils_log()` fallback that uses stderr when `log()` isn't available.
+- **`validate_output_file` silent failure**: When `RESULTS_DIR` was unset, validation silently rejected all files with a misleading error. Now explicitly checks and reports the missing variable.
+- **9 review pipeline bugs** silently dropping all findings (#182-#190) — see v9.3.1 below for individual fixes.
+
+---
+
 ## [9.3.1] - 2026-03-16
 
 ### Fixed
