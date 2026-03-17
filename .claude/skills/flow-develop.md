@@ -732,6 +732,55 @@ Before writing code, ensure:
 
 ---
 
+## After Implementation: Auto Code Review & E2E Verification (MANDATORY)
+
+**After implementation completes and before presenting results to the user, you MUST launch two verification agents in parallel.** Do NOT skip this step or ask the user whether to run it — it is automatic.
+
+### Launch both agents simultaneously:
+
+**Agent 1 — Code Review (Sonnet):**
+```
+Agent(
+  model: "sonnet",
+  subagent_type: "feature-dev:code-reviewer",
+  run_in_background: true,
+  description: "Code review: post-develop",
+  prompt: "Review the code changes from this development session. Focus on:
+1. Bugs, logic errors, security vulnerabilities
+2. Hidden dependencies or coupling issues
+3. Whether error handling covers failure modes
+4. Adherence to project conventions (check CLAUDE.md)
+
+Check git diff for the changed files. Report only high-confidence issues."
+)
+```
+
+**Agent 2 — E2E Verification (Sonnet):**
+```
+Agent(
+  model: "sonnet",
+  run_in_background: true,
+  description: "E2E test: post-develop",
+  prompt: "Run end-to-end verification of the development changes:
+1. Run the project's test suite (detect from package.json scripts, Makefile, or pyproject.toml)
+2. Verify no regressions in existing tests
+3. Check that new files are properly integrated (imported, registered, sourced)
+4. Verify the implementation matches the original task requirements
+
+Report: tests passed/failed, any integration issues found."
+)
+```
+
+**After both agents complete:**
+- Present their findings to the user as part of the results
+- If the code reviewer found HIGH-confidence issues, flag them prominently
+- If tests failed, flag before the "what next?" prompt
+- Do NOT block on the review — present findings alongside results
+
+WHY: The user should never have to manually request a code review after development work. Fresh-eyes review from a different model (Sonnet vs Opus) catches issues the implementer is blind to. Running tests automatically catches regressions before the user discovers them.
+
+---
+
 ## After Implementation Checklist
 
 After writing code, ensure:
@@ -744,7 +793,9 @@ After writing code, ensure:
 - [ ] Tests written (if applicable)
 - [ ] Lint/typecheck commands run (detect from package.json, pyproject.toml, Cargo.toml, Makefile; if not found, ask the user)
 - [ ] If lint/test commands were discovered and not documented in CLAUDE.md, suggest adding them
-- [ ] User notified of completion
+- [ ] **Auto code review completed** (Sonnet agent)
+- [ ] **E2E verification completed** (Sonnet agent)
+- [ ] User notified of completion with review findings
 - [ ] Suggest running ink-workflow for validation
 
 ---
