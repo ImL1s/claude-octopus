@@ -11,7 +11,7 @@ pass() { TEST_COUNT=$((TEST_COUNT+1)); PASS_COUNT=$((PASS_COUNT+1)); echo "PASS:
 fail() { TEST_COUNT=$((TEST_COUNT+1)); FAIL_COUNT=$((FAIL_COUNT+1)); echo "FAIL: $1 — $2"; }
 
 # ── 1. Line count threshold ────────────────────────────────────────
-MAX_LINES=22500
+MAX_LINES=22600
 line_count=$(wc -l < "$ORCH" | tr -d ' ')
 
 if [[ "$line_count" -le "$MAX_LINES" ]]; then

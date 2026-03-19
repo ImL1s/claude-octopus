@@ -156,17 +156,19 @@ Or skip the table — type `/octo:auto <what you want>` or just say `octo <what 
 
 ## How It Works
 
-### Three Providers, One Workflow
+### Five Providers, One Workflow
 
-Claude Octopus coordinates Codex (OpenAI), Gemini (Google), and Claude (Anthropic) across every workflow. Each provider has a distinct role:
+Claude Octopus coordinates up to five AI providers across every workflow:
 
 | Provider | Role |
 |----------|------|
-| Codex | Implementation depth — code patterns, technical analysis, architecture |
-| Gemini | Ecosystem breadth — alternatives, security review, research synthesis |
-| Claude | Orchestration — quality gates, consensus building, final synthesis |
+| 🔴 Codex (OpenAI) | Implementation depth — code patterns, technical analysis, architecture |
+| 🟡 Gemini (Google) | Ecosystem breadth — alternatives, security review, research synthesis |
+| 🟣 Perplexity | Live web search — CVE lookups, dependency research, current docs |
+| 🌐 OpenRouter | Alternative model routing — access 100+ models via single API |
+| 🔵 Claude (Anthropic) | Orchestration — quality gates, consensus building, final synthesis |
 
-Providers run in parallel for research, sequentially for problem scoping, and adversarially for review. A 75% consensus quality gate prevents questionable work from shipping.
+Providers run in parallel for research, sequentially for problem scoping, and adversarially for review. A 75% consensus quality gate prevents questionable work from shipping. Only Claude is required — all others are optional and auto-detected.
 
 ### Double Diamond Phases
 
