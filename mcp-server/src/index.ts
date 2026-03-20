@@ -386,6 +386,171 @@ server.tool(
   }
 );
 
+// --- OpenCLI Integration Tools ---
+
+const OPENCLI_BRIDGE_SH = resolve(PLUGIN_ROOT, "scripts/opencli-bridge.sh");
+
+async function runOpencliBridge(
+  action: string,
+  args: string[] = []
+): Promise<{ text: string; isError: boolean }> {
+  try {
+    const { stdout, stderr } = await execFileAsync(
+      OPENCLI_BRIDGE_SH,
+      [action, ...args],
+      {
+        cwd: PLUGIN_ROOT,
+        timeout: 60_000,
+        env: {
+          PATH: process.env.PATH,
+          HOME: process.env.HOME,
+          TMPDIR: process.env.TMPDIR,
+          SHELL: process.env.SHELL,
+          USER: process.env.USER,
+          OPENCLI_FORMAT: "json",
+          OPENCLI_TIMEOUT: process.env.OPENCLI_TIMEOUT ?? "30",
+        },
+      }
+    );
+    return { text: stdout || stderr || "Command completed with no output.", isError: false };
+  } catch (error: unknown) {
+    // Prefer child process stdout/stderr over generic error.message for diagnostics
+    const childStdout = (error as any)?.stdout as string | undefined;
+    const childStderr = (error as any)?.stderr as string | undefined;
+    const raw = childStdout || childStderr || (error instanceof Error ? error.message : String(error));
+    // Sanitize potential API key leaks from error messages
+    const sanitized = raw.replace(/[A-Za-z_]+KEY=[^\s]+/g, "[REDACTED]");
+    return { text: `Error executing opencli-bridge ${action}: ${sanitized}`, isError: true };
+  }
+}
+
+// Centralized platform list for trending/multi-search/multi-trending
+const OPENCLI_PLATFORMS = [
+  "twitter", "reddit", "hackernews", "bilibili", "zhihu",
+  "xueqiu", "v2ex", "producthunt", "github", "stackoverflow", "youtube",
+] as const;
+
+server.tool(
+  "opencli_search",
+  "Search a web platform (Twitter, Reddit, YouTube, etc.) for real-time content using OpenCLI. Requires Chrome with Browser Bridge extension.",
+  {
+    platform: z
+      .enum(OPENCLI_PLATFORMS)
+      .describe("Platform to search"),
+    query: z.string().describe("Search query"),
+  },
+  async ({ platform, query }) => {
+    const { text, isError } = await runOpencliBridge("search", [platform, query]);
+    return { content: [{ type: "text" as const, text }], isError };
+  }
+);
+
+server.tool(
+  "opencli_trending",
+  "Get trending/hot content from a web platform (Twitter, Reddit, Hacker News, etc.) using OpenCLI.",
+  {
+    platform: z
+      .enum(OPENCLI_PLATFORMS)
+      .describe("Platform to get trending content from"),
+  },
+  async ({ platform }) => {
+    const { text, isError } = await runOpencliBridge("trending", [platform]);
+    return { content: [{ type: "text" as const, text }], isError };
+  }
+);
+
+server.tool(
+  "opencli_fetch",
+  "Run any OpenCLI command for a platform — e.g., get user profile, read thread, list bookmarks.",
+  {
+    platform: z.string().describe("Platform name (e.g., twitter, reddit, bilibili)"),
+    command: z.string().describe("Command to run (e.g., profile, thread, bookmarks, timeline)"),
+    args: z
+      .array(z.string())
+      .optional()
+      .describe("Additional arguments for the command"),
+  },
+  async ({ platform, command, args }) => {
+    const { text, isError } = await runOpencliBridge("fetch", [platform, command, ...(args ?? [])]);
+    return { content: [{ type: "text" as const, text }], isError };
+  }
+);
+
+server.tool(
+  "opencli_explore",
+  "Discover APIs and capabilities of any website using OpenCLI's AI-powered exploration.",
+  {
+    url: z.string().url().describe("URL to explore (e.g., https://example.com)"),
+  },
+  async ({ url }) => {
+    const { text, isError } = await runOpencliBridge("explore", [url]);
+    return { content: [{ type: "text" as const, text }], isError };
+  }
+);
+
+server.tool(
+  "opencli_desktop",
+  "Control a desktop Electron app (Cursor, Antigravity, ChatGPT, Notion, etc.) via OpenCLI.",
+  {
+    app: z
+      .string()
+      .describe("App name: cursor, antigravity, chatgpt, notion, discord, wechat, etc."),
+    command: z
+      .string()
+      .describe("Command to run on the app (e.g., status, ask, screenshot, export)"),
+    args: z
+      .array(z.string())
+      .optional()
+      .describe("Additional arguments"),
+  },
+  async ({ app, command, args }) => {
+    const { text, isError } = await runOpencliBridge("desktop", [app, command, ...(args ?? [])]);
+    return { content: [{ type: "text" as const, text }], isError };
+  }
+);
+
+server.tool(
+  "opencli_status",
+  "Check if OpenCLI is installed and the Browser Bridge daemon is running.",
+  {},
+  async () => {
+    const { text, isError } = await runOpencliBridge("status");
+    return { content: [{ type: "text" as const, text }], isError };
+  }
+);
+
+server.tool(
+  "opencli_multi_search",
+  "Search across multiple platforms simultaneously and aggregate results. Requires jq.",
+  {
+    query: z.string().describe("Search query"),
+    platforms: z
+      .array(z.enum(OPENCLI_PLATFORMS))
+      .optional()
+      .describe("Platforms to search (default: twitter, reddit, hackernews)"),
+  },
+  async ({ query, platforms }) => {
+    const args = [query, ...(platforms ?? [])];
+    const { text, isError } = await runOpencliBridge("multi-search", args);
+    return { content: [{ type: "text" as const, text }], isError };
+  }
+);
+
+server.tool(
+  "opencli_multi_trending",
+  "Get trending content from multiple platforms simultaneously and aggregate results. Requires jq.",
+  {
+    platforms: z
+      .array(z.enum(OPENCLI_PLATFORMS))
+      .optional()
+      .describe("Platforms to get trending from (default: twitter, reddit, hackernews)"),
+  },
+  async ({ platforms }) => {
+    const { text, isError } = await runOpencliBridge("multi-trending", platforms ?? []);
+    return { content: [{ type: "text" as const, text }], isError };
+  }
+);
+
 // --- Introspection Tools ---
 
 server.tool(

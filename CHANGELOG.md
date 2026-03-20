@@ -1,3 +1,18 @@
+# Changelog
+
+## [Unreleased]
+
+### Added
+
+- **OpenCLI integration**: New provider for real-time web research and desktop control via [OpenCLI](https://github.com/jackwener/opencli).
+  - Bridge script (`scripts/opencli-bridge.sh`) translating Octopus requests to OpenCLI commands
+  - MCP tools: `opencli_search`, `opencli_trending`, `opencli_fetch`, `opencli_explore`, `opencli_desktop`, `opencli_status`, `opencli_multi_search`, `opencli_multi_trending`
+  - Provider config (`config/providers/opencli/CLAUDE.md`)
+  - Skills: `skill-opencli-research` (real-time search, trending, URL extraction) and `skill-opencli-desktop` (screenshots, tab management, app interaction)
+  - Integration guide (`INTEGRATION.md`)
+
+---
+
 ## [9.7.6] - 2026-03-19
 
 ### Added
@@ -137,9 +152,6 @@
 
 - Flag pruning, speed optimization (~750 fewer subshell forks), pre-existing test fixes
 
----
-
-# Changelog
 
 ## [9.4.0] - 2026-03-17
 
