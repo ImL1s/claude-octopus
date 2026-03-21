@@ -1,7 +1,7 @@
 {
   "name": "octo",
-  "version": "9.7.7",
-  "description": "Multi-tentacled orchestrator using Double Diamond methodology. (v9.7.7) Fixed broken Skill() dispatch in 9 commands, scoped PostToolUse hook to reduce overhead, MCP Node version guard. 3-tier adaptive statusline, smart HUD. 32 expert personas, 40 commands, 45 skills. Commands use '/octo:*', including the '/octo:auto' smart router. Run /octo:setup for guided setup.",
+  "version": "9.7.8",
+  "description": "Multi-tentacled orchestrator using Double Diamond methodology. (v9.7.8) Windows USER fix, Codex smoke test git repo fix. 3-tier adaptive statusline, smart HUD. 32 expert personas, 40 commands, 45 skills. Commands use '/octo:*', including the '/octo:auto' smart router. Run /octo:setup for guided setup.",
   "author": {
     "name": "nyldn"
   },

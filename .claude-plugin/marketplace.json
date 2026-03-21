@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Multi-tentacled orchestration plugin for Claude Code",
-    "version": "1.0.0"
+    "version": "9.7.8"
   },
   "plugins": [
     {
       "name": "octo",
       "source": "./",
-      "description": "v9.7.7 - Fixed Skill() dispatch, scoped hooks for speed, MCP Node guard. 3-tier adaptive HUD. 32 personas, 40 commands, 50 skills. Run /octo:setup.",
-      "version": "9.7.7",
+      "description": "v9.7.8 - Windows USER fix, Codex smoke test git repo fix. 3-tier adaptive HUD. 32 personas, 40 commands, 45 skills. Run /octo:setup.",
+      "version": "9.7.8",
       "author": {
         "name": "nyldn"
       },
