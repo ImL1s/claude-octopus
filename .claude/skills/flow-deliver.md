@@ -243,7 +243,15 @@ These spinner verb updates happen automatically - orchestrate.sh calls `update_t
 
 ---
 
-### STEP 5: Verify Execution (MANDATORY - Validation Gate)
+### STEP 5: Verify Execution (MANDATORY - Verification Gate)
+
+**IRON LAW: NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE.**
+- "Should work now" → RUN IT.
+- "I'm confident" → Confidence is not evidence.
+- "I already tested earlier" → Code changed since then. Test again.
+- "It's a trivial change" → Trivial changes break production.
+
+If ANY code changed after the last test run (review fixes, formatting don't count), re-run tests before declaring the deliver phase complete.
 
 **After orchestrate.sh completes, verify it succeeded:**
 

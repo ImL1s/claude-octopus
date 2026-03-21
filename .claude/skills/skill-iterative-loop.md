@@ -431,22 +431,96 @@ If the strategy-rotation hook fires, immediately change approach. Do not retry t
 
 ---
 
+## Self-Regulation (MANDATORY)
+
+Every iterative loop MUST track a **Self-Regulation Score** that accumulates danger signals. This prevents runaway loops where the agent keeps "fixing" things without real progress.
+
+### Sliding-Window Stuck Detection
+
+Maintain a mental window of the **last 10 iterations** (or fewer if less than 10 have run). After each iteration, check for repeated patterns:
+
+**Single-state repetition:** Did the same outcome/error occur 3+ times consecutively?
+- Same test failure, same error message, same files modified → **STUCK**
+
+**Multi-step cycle detection:** Is there an A→B→A→B oscillation?
+- Iteration N touches file X, N+1 touches file Y, N+2 touches file X again, N+3 touches Y again → **CYCLE DETECTED**
+- Compare the *files modified* and *error messages* across iterations, not just success/failure
+
+**On first detection:** Announce the pattern to the user. Attempt ONE diagnostic retry with explicit acknowledgment: "This pattern has repeated — here's what I'll do differently: [specific change]."
+
+**On second detection:** **HALT immediately.** Display the detected cycle and ask the user whether to continue with a completely different approach or stop.
+
+### WTF-Likelihood Score
+
+Track a cumulative score starting at 0%. Each event adds to the score:
+
+| Event | Score Impact |
+|-------|-------------|
+| Revert (git revert, undo, roll back) | **+15%** |
+| Touching files unrelated to the stated goal | **+20%** |
+| A fix that requires changing >3 files | **+5%** |
+| After the 15th fix attempt | **+1% per additional fix** |
+| All remaining issues are Low severity | **+10%** |
+
+**If WTF score exceeds 20%:** **STOP immediately.** Show:
+1. The current WTF score and what contributed to it
+2. Work completed so far
+3. Ask the user: "Continue with a different approach, or stop here?"
+
+**Hard cap:** 50 iterations regardless of score or progress. No exceptions.
+
+### How to Track
+
+You do NOT need external tools for this. Track mentally during the loop:
+- After each iteration, mentally note: files touched, outcome, whether a revert happened
+- Compare against the sliding window of recent iterations
+- Accumulate the WTF score
+- Report both the iteration count AND the self-regulation score in each iteration summary:
+
+```
+Iteration 5/20 | Self-regulation: 10% (1 revert, 0 unrelated files)
+```
+
+### Interaction with Strategy Rotation
+
+The strategy-rotation hook and self-regulation are complementary:
+- Strategy rotation fires on consecutive **tool** failures (same tool, same error)
+- Self-regulation fires on **outcome** patterns (cycles, reverts, scope creep)
+- Both can fire independently. If both fire, **HALT** — the loop is definitely stuck.
+
+---
+
 ## Safety Mechanisms
 
 ### 1. Iteration Limit
 
 ```python
 MAX_ITERATIONS = user_specified or 10  # Always have a limit
+HARD_CAP = 50  # Absolute maximum regardless of user setting
 ```
 
-### 2. Progress Detection
+### 2. Self-Regulation Score
+
+```
+Track WTF score across iterations.
+If score > 20%: STOP and ask user.
+```
+
+### 3. Sliding-Window Detection
+
+```
+Track last 10 iterations.
+If repeated pattern detected twice: STOP and ask user.
+```
+
+### 4. Progress Detection
 
 ```
 If last 3 iterations show same result:
   → Stop and ask user
 ```
 
-### 3. Time Limit (for long operations)
+### 5. Time Limit (for long operations)
 
 ```
 If total time > 30 minutes:
@@ -454,7 +528,7 @@ If total time > 30 minutes:
   → Ask user if should continue
 ```
 
-### 4. User Checkpoints
+### 6. User Checkpoints
 
 ```
 Every N iterations:

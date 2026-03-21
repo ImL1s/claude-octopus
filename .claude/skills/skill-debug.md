@@ -206,12 +206,18 @@ When error is deep in call stack:
 - No other tests broken?
 - Issue actually resolved?
 
-### 4. If Fix Doesn't Work
+### 4. If Fix Doesn't Work — 3-Strike Rule
 
 | Attempts | Action |
 |----------|--------|
 | < 3 | Return to Phase 1, re-analyze with new information |
-| ≥ 3 | **STOP.** Question the architecture. |
+| ≥ 3 | **STOP.** Show your work. Ask the user. |
+
+**Anti-rationalization rules:**
+- "Should work now" → **RUN IT.** Confidence is not evidence.
+- "I already tested earlier" → Code changed since then. **Test again.**
+- "It's a trivial change" → Trivial changes break production. **Verify.**
+- "I'm pretty sure this fixes it" → Pretty sure is not verified. **Run the test.**
 
 ### 5. After 3+ Failed Fixes: Question Architecture
 
@@ -225,7 +231,7 @@ When error is deep in call stack:
 - Are we sticking with it through inertia?
 - Should we refactor architecture vs. continue fixing symptoms?
 
-**Discuss with user before attempting more fixes.**
+**Discuss with user before attempting more fixes. Do not attempt a 4th fix without explicit user approval.**
 
 ---
 
