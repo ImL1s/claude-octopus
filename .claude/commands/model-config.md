@@ -121,7 +121,7 @@ export OCTOPUS_COST_MODE=standard
 
 | Mode | Codex Model | Gemini Model | Best For |
 |------|-------------|--------------|----------|
-| `budget` | gpt-5-codex-mini | gemini-3-flash-preview | Prototyping, low-cost iteration |
+| `budget` | gpt-5.4-mini | gemini-3-flash-preview | Prototyping, low-cost iteration |
 | `standard` | (config default) | (config default) | Normal development |
 | `premium` | (config default) | (config default) | Critical features, security audits |
 
@@ -139,7 +139,7 @@ export OCTOPUS_COST_MODE=standard
 
 | Model | Context | Best For | Cost |
 |-------|---------|----------|------|
-| `gpt-5-codex-mini` | 400K | Budget tasks, ~1 credit/msg | ~$0.25/$2.00 per MTok |
+| `gpt-5.4-mini` | 400K | Budget tasks, ~1 credit/msg | ~$0.25/$2.00 per MTok |
 | `gpt-5.1-codex-max` | 400K | Long-horizon agentic tasks | $1.25/$10.00 per MTok |
 
 ### Reasoning Models (via Codex CLI)
@@ -219,7 +219,7 @@ Location: `~/.claude-octopus/config/providers.json`
       "default": "gpt-5.4",
       "fallback": "gpt-5.2-codex",
       "spark": "gpt-5.4",
-      "mini": "gpt-5-codex-mini",
+      "mini": "gpt-5.4-mini",
       "reasoning": "o3",
       "large_context": "gpt-4.1"
     },

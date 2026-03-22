@@ -136,7 +136,7 @@ migrate_provider_config() {
       "default": "$codex_model",
       "fallback": "gpt-5.4",
       "spark": "gpt-5.4",
-      "mini": "gpt-5-codex-mini",
+      "mini": "gpt-5.4-mini",
       "reasoning": "o3",
       "large_context": "gpt-5.4"
     },
@@ -269,7 +269,7 @@ set_provider_model() {
       "default": "gpt-5.4",
       "fallback": "gpt-5.4",
       "spark": "gpt-5.4",
-      "mini": "gpt-5-codex-mini",
+      "mini": "gpt-5.4-mini",
       "reasoning": "o3",
       "large_context": "gpt-5.4"
     },

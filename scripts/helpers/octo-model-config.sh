@@ -57,7 +57,7 @@ ensure_config() {
       "default": "gpt-5.4",
       "fallback": "gpt-5.4",
       "spark": "gpt-5.4",
-      "mini": "gpt-5-codex-mini",
+      "mini": "gpt-5.4-mini",
       "reasoning": "o3",
       "large_context": "gpt-5.4"
     },
@@ -294,7 +294,7 @@ cmd_models() {
         "gpt-5.4-pro|400|yes|yes|no|codex|premium|active"
         "gpt-5.3-codex|400|yes|yes|no|codex|standard|active"
         "gpt-5.2-codex|400|yes|yes|no|codex|standard|active"
-        "gpt-5-codex-mini|400|yes|no|no|codex|budget|active"
+        "gpt-5.4-mini|400|yes|no|no|codex|budget|active"
         "gpt-5.1-codex-max|400|yes|yes|no|codex|premium|active"
         "o3|200|yes|no|yes|codex|premium|active"
         "o3-mini|200|yes|no|yes|codex|budget|active"

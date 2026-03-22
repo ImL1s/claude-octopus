@@ -429,8 +429,8 @@ get_model_pricing() {
         gpt-5.3-codex-spark)    echo "1.75:14.00" ;;   # Spark - same API price, Pro-only
         gpt-5.2-codex)          echo "1.75:14.00" ;;
         gpt-5.1-codex-max)      echo "1.25:10.00" ;;
-        gpt-5-codex-mini)       echo "0.25:2.00" ;;    # v8.39.0: Budget (renamed from gpt-5.1-codex-mini)
-        gpt-5.1-codex-mini)     echo "0.25:2.00" ;;    # v8.39.0: Fixed pricing ($0.30/$1.25 → $0.25/$2.00), alias
+        gpt-5.4-mini)       echo "0.25:2.00" ;;    # v8.39.0: Budget (renamed from gpt-5.4-mini)
+        gpt-5.4-mini)     echo "0.25:2.00" ;;    # v8.39.0: Fixed pricing ($0.30/$1.25 → $0.25/$2.00), alias
         gpt-5)                  echo "1.25:10.00" ;;   # v8.39.0: GPT-5 base
         gpt-5.2)                echo "1.75:14.00" ;;
         gpt-5.1)                echo "1.25:10.00" ;;
@@ -499,7 +499,7 @@ find_capable_fallback() {
     local -a candidates=()
     case "$provider" in
         codex)
-            candidates=(gpt-5-codex-mini gpt-5.2-codex gpt-5.3-codex gpt-5.4 gpt-5.4-pro o3) ;;
+            candidates=(gpt-5.4-mini gpt-5.2-codex gpt-5.3-codex gpt-5.4 gpt-5.4-pro o3) ;;
         gemini)
             candidates=(gemini-3-flash-preview gemini-3.1-pro-preview) ;;
         claude)

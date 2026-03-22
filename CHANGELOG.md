@@ -1,3 +1,18 @@
+## [9.10.2] - 2026-03-22
+
+### Changed
+
+- **embrace.sh dispatch** — Now detects all 5 CLI providers (codex, gemini, copilot, qwen, ollama) and dynamically builds dispatch strategies. 3+ available CLIs → all join the fleet. Qwen and Ollama now participate in research, review, and architecture workflows.
+- **Debate participants** — Copilot (🟢) and Qwen (🟤) join as supplementary participants when available, alongside core four (Codex/Gemini/Sonnet/Opus).
+- **Smart setup prompt** — Detects when legacy users have new providers (Copilot/Qwen/Ollama) and proactively informs them of extra tentacles.
+- **Codex mini model** — Updated `gpt-5-codex-mini` → `gpt-5.4-mini` across dispatch, models catalog, provider routing, and docs. GPT-5.4 Mini is 2x faster and uses 30% token quota vs GPT-5.4.
+
+### Fixed
+
+- **Emoji conflict** — Qwen 🟠→🟤 (Sonnet keeps 🟠 as established).
+
+---
+
 ## [9.10.1] - 2026-03-22
 
 ### Changed
