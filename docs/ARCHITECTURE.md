@@ -457,6 +457,5 @@ The plugin wraps these commands and provides:
 ## See Also
 
 - **[Command and Usage Reference](./COMMAND-REFERENCE.md)** - Commands, triggers, and provider indicators
-- **[CLI Reference](./CLI-REFERENCE.md)** - Direct CLI usage
 - **[Documentation Guide](./README.md)** - Docs landing page
 - **[Command Reference](./COMMAND-REFERENCE.md)** - All available commands

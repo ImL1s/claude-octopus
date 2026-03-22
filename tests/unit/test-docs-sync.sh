@@ -167,8 +167,7 @@ check_docs_files() {
   local required_docs=(
     "docs/README.md"
     "docs/COMMAND-REFERENCE.md"
-    "docs/CLI-REFERENCE.md"
-    "docs/PLUGIN-ARCHITECTURE.md"
+    "docs/ARCHITECTURE.md"
   )
 
   for doc in "${required_docs[@]}"; do
