@@ -1,3 +1,23 @@
+## [9.10.3] - 2026-03-23
+
+### Added
+
+- **HUD: tool activity tracking** — Statusline shows active tools and counts (`◐ Edit: auth.ts │ ✓ Read ×3 │ ✓ Grep ×2`). Tracks Read, Write, Edit, Bash, Grep, Glob, WebSearch, WebFetch from transcript.
+- **HUD: enhanced todo progress** — Shows active task text, not just count (`▸ Fix auth bug (2/5)`).
+- **HUD: named presets** — `{"preset": "developer"}` in `.hud-config.jsonc`. Built-in: minimal, developer, full, performance. Preset indicator in Octo column.
+- **PRIVACY.md** — Privacy policy for official Anthropic marketplace submission.
+- **Cowork compatibility** — Added homepage field, updated keywords with "cowork", "multi-llm", all 8 provider names. Plugin was already format-compatible.
+
+### Fixed
+
+- **Smart router missing multi-LLM route** — `/octo:multi` was unreachable via `/octo:auto`. Keywords "multi", "multi-llm", "multi-provider" now route to `octo:multi`.
+- **sync-marketplace.sh duplicate text** — "Run /octo:setup." appeared twice in marketplace description.
+- **test-skill-templates.sh** — Updated for removed `skills/blocks/` directory.
+- **Build artifacts** — Regenerated Factory skills, OpenClaw dist, new command wrappers.
+- **Hardened plugin validation** (PR #208) — Factory YAML frontmatter normalization, `claude plugin validate` in release workflow.
+
+---
+
 ## [9.10.2] - 2026-03-22
 
 ### Changed
