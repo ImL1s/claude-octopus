@@ -4,15 +4,15 @@
     "name": "nyldn"
   },
   "metadata": {
-    "description": "v9.15.0 — Multi-tentacled orchestration plugin for Claude Code",
-    "version": "9.15.0"
+    "description": "v9.15.1 — Multi-tentacled orchestration plugin for Claude Code",
+    "version": "9.15.1"
   },
   "plugins": [
     {
       "name": "octo",
       "source": "./",
-      "description": "v9.15.0 - Token optimization — RTK companion detection, cache-aligned prompts, anomaly-preserving truncation. 32 personas, 46 commands, 50 skills. Run /octo:setup.",
-      "version": "9.15.0",
+      "description": "v9.15.1 - Token optimization — RTK companion detection, cache-aligned prompts, anomaly-preserving truncation. 32 personas, 46 commands, 50 skills. Run /octo:setup.",
+      "version": "9.15.1",
       "author": {
         "name": "nyldn"
       },
