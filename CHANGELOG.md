@@ -1,3 +1,19 @@
+## [9.15.2] - 2026-03-27
+
+### Fixed
+
+- **Silent error swallowing in provider dispatch** — Added `set -o pipefail` to spawn_agent subshell. Pipeline `printf | codex | tee` was reporting tee's exit code (always 0), silently hiding Codex/Gemini failures.
+- **Codex explicit stdin flag** — All `codex exec` commands now include `-` for explicit stdin reading instead of relying on auto-detection.
+- **Gemini stdout noise filter** — MCP status messages, extension loading, and keychain fallback messages no longer pollute results.
+- **Windows PATH space-splitting** — `build_provider_env()` skips `env -i` credential isolation on Windows (MINGW/MSYS/CYGWIN) where `C:\Program Files` paths break word-splitting.
+- **Error classification expanded** — `classify_error()` now handles permission-denied, module-not-found, and MCP-issues patterns for proper circuit breaker response.
+- **MANDATORY COMPLIANCE** added to 9 commands/skills (factory, prd, sentinel, resume, schedule, code-review, parallel-agents, debug, writing-plans).
+- **PostHog telemetry** reads key from settings.json when env var unset.
+- **Codex review dispatch** — Strengthened JSON output format requirement to prevent unstructured diff dumps.
+- **MANDATORY COMPLIANCE audit test** — New `test-mandatory-compliance.sh` (38 tests) catches missing enforcement automatically.
+
+---
+
 ## [9.15.1] - 2026-03-27
 
 ### Fixed

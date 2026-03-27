@@ -4,15 +4,15 @@
     "name": "nyldn"
   },
   "metadata": {
-    "description": "v9.15.1 — Multi-tentacled orchestration plugin for Claude Code",
-    "version": "9.15.1"
+    "description": "v9.15.2 — Multi-tentacled orchestration plugin for Claude Code",
+    "version": "9.15.2"
   },
   "plugins": [
     {
       "name": "octo",
       "source": "./",
-      "description": "v9.15.1 - Provider dispatch reliability — pipefail, stdin flags, Gemini noise filter, error classification. 32 personas, 46 commands, 50 skills. Run /octo:setup.",
-      "version": "9.15.1",
+      "description": "v9.15.2 - Provider dispatch reliability, Windows compat, MANDATORY COMPLIANCE — pipefail, stdin flags, Gemini noise filter, error classification. 32 personas, 46 commands, 50 skills. Run /octo:setup.",
+      "version": "9.15.2",
       "author": {
         "name": "nyldn"
       },
