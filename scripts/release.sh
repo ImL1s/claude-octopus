@@ -68,29 +68,29 @@ json.dump(p, open('package.json', 'w'), indent=2)
 print('   package.json')
 "
 
-# plugin.json — update version field only (description has no embedded version)
+# plugin.json — strip old version prefix, prepend new one from version field
 python3 -c "
 import json, re
 p = json.load(open('.claude-plugin/plugin.json'))
 p['version'] = '${VERSION}'
-# Strip any legacy version prefix from description (e.g. 'v9.15.2 — ...' or 'v9.15.2 - ...')
-p['description'] = re.sub(r'^v\d+\.\d+\.\d+\s*[\u2014\-]\s*', '', p['description'])
+# Strip any existing version prefix, then prepend the new one
+desc = re.sub(r'^v\d+\.\d+\.\d+\s*[\u2014\-]\s*', '', p['description'])
+p['description'] = 'v${VERSION} \u2014 ' + desc
 json.dump(p, open('.claude-plugin/plugin.json', 'w'), indent=2)
 print('   .claude-plugin/plugin.json')
 "
 
-# marketplace.json — update version + feature summary (no version in description)
+# marketplace.json — strip old version prefix, prepend new one
 python3 -c "
 import json, re
 m = json.load(open('.claude-plugin/marketplace.json'))
 for plugin in m.get('plugins', []):
     if plugin.get('name') == 'octo':
         plugin['version'] = '${VERSION}'
-        # Strip any legacy version prefix from description
-        plugin['description'] = re.sub(r'^v\d+\.\d+\.\d+\s*[\-\u2014]\s*', '', plugin['description'])
+        # Strip any existing version prefix, then prepend the new one
+        desc = re.sub(r'^v\d+\.\d+\.\d+\s*[\-\u2014]\s*', '', plugin['description'])
+        plugin['description'] = 'v${VERSION} - ' + desc
 m['metadata']['version'] = '${VERSION}'
-# Also strip version prefix from top-level metadata description
-m['metadata']['description'] = re.sub(r'^v\d+\.\d+\.\d+\s*[\-\u2014]\s*', '', m['metadata']['description'])
 json.dump(m, open('.claude-plugin/marketplace.json', 'w'), indent=2)
 print('   .claude-plugin/marketplace.json')
 "
