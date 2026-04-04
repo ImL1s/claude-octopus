@@ -1,3 +1,14 @@
+## [9.19.1] - 2026-04-04
+
+### Fixed
+
+- **MCP server opt-in** — `octo-claw` MCP server no longer auto-registers in `.mcp.json`, preventing permanent `✘ failed` status in `/mcp` panel. Now requires `OCTO_CLAW_ENABLED=true` to start. (#240, thanks @everton-dgn)
+- **MCP security hardening** — Blocked security-governing env vars (`OCTOPUS_SECURITY_V870`, `OCTOPUS_GEMINI_SANDBOX`, etc.) from being overridden via MCP client environment.
+- **IDE editor context** — New `octopus_set_editor_context` MCP tool injects IDE state (file, selection, cursor) into orchestration. 50KB selection limit.
+- **Self-regulation in develop loops** — WTF score tracking added to `flow-develop.md` for runaway iteration detection (hard cap: 50 iterations).
+
+---
+
 ## [9.19.0] - 2026-04-04
 
 ### Added
