@@ -12,6 +12,10 @@ trigger: |
   - "design history" or "show design history"
   - "find prior designs" or "search designs"
   DO NOT activate for generic documentation or README creation.
+paths:
+  - "**/todo/**"
+  - "**/specs/**"
+  - "**/PRD*"
 ---
 
 # Design Document Lineage

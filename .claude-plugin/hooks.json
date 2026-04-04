@@ -105,6 +105,7 @@
       "matcher": {
         "tool": "Bash"
       },
+      "if": "input matches '(rm\\s|mv\\s|git\\s+(push|reset|checkout\\s+\\.)|docker\\s+rm|DROP\\s+TABLE|sudo)'",
       "hooks": [
         {
           "type": "command",
@@ -117,6 +118,7 @@
       "matcher": {
         "tool": "Edit|Write"
       },
+      "if": "env.OCTO_FREEZE_MODE == 'on'",
       "hooks": [
         {
           "type": "command",
@@ -129,37 +131,13 @@
   "PostToolUse": [
     {
       "matcher": {
-        "tool": "Bash|Read|WebFetch|Grep"
+        "tool": "Bash|Agent|Write|Edit|Read|WebFetch|Grep"
       },
       "hooks": [
         {
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/output-compressor.sh",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-dispatch.sh",
           "timeout": 10
-        }
-      ]
-    },
-    {
-      "matcher": {
-        "tool": "Bash|Agent|Write|Edit"
-      },
-      "hooks": [
-        {
-          "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/context-awareness.sh",
-          "timeout": 5
-        }
-      ]
-    },
-    {
-      "matcher": {
-        "tool": "Bash|Edit|Write"
-      },
-      "hooks": [
-        {
-          "type": "command",
-          "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/strategy-rotation.sh\"",
-          "timeout": 5
         }
       ]
     },
@@ -192,6 +170,7 @@
         "tool": "Bash",
         "pattern": "orchestrate\\.sh.*(probe|grasp|tangle|ink|embrace)"
       },
+      "if": "env.OCTOPUS_WEBHOOK_URL",
       "hooks": [
         {
           "type": "command",

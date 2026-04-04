@@ -7,6 +7,8 @@ trigger: |
   - Processing suggestions from /octo:review or /octo:staged-review
   - Responding to CI failure feedback
   - Handling changes-requested status on a PR
+paths:
+  - ".git/**"
 ---
 
 # Receiving Code Review

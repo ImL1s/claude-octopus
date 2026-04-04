@@ -21,6 +21,8 @@ pre_execution_contract:
 validation_gates:
   - orchestrate_sh_executed
   - output_artifact_exists
+paths:
+  - ".git/**"
 ---
 
 # Finishing a Development Branch

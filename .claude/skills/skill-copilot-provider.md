@@ -7,6 +7,9 @@ trigger: |
   AUTOMATICALLY ACTIVATE when user says:
   "copilot provider" or "add copilot" or "github copilot" or "use copilot"
   DO NOT activate for general copilot IDE usage or copilot chat in editor.
+paths:
+  - "**/.github/copilot*"
+  - "**/.copilot*"
 ---
 
 # GitHub Copilot Provider Skill

@@ -132,14 +132,14 @@ fi
 
 case "$SEVERITY" in
     AUTO_COMPACT)
-        MSG="🐙 AUTO-COMPACT IMMINENT: Context at ${USED_PCT}% (${REMAINING}% remaining). Auto-compaction will fire soon — complete your current thought. Do NOT start new large operations. ${ADVICE}${RTK_TIP}" ;;
+        MSG="ctx ${USED_PCT}% — auto-compact imminent, finish current thought. ${ADVICE}${RTK_TIP}" ;;
     CRITICAL)
-        MSG="🐙 CRITICAL: Context at ${USED_PCT}% (${REMAINING}% remaining). ${ADVICE}${RTK_TIP}" ;;
+        MSG="ctx ${USED_PCT}% critical. ${ADVICE}${RTK_TIP}" ;;
     WARNING)
-        MSG="🐙 WARNING: Context at ${USED_PCT}% (${REMAINING}% remaining). ${ADVICE}${RTK_TIP}" ;;
+        MSG="ctx ${USED_PCT}% warning. ${ADVICE}${RTK_TIP}" ;;
 esac
 
 # Return hook response with context warning
 cat <<EOF
-{"decision":"continue","additionalContext":"[🐙 Octopus] ${MSG}"}
+{"decision":"continue","additionalContext":"[🐙] ${MSG}"}
 EOF

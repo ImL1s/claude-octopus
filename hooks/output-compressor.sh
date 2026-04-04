@@ -142,7 +142,7 @@ echo "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"session\":\"${SESSION}\",\"ty
 
 # --- Output compressed summary as additionalContext ---
 # Escape for JSON output
-summary="[🐙 Octopus Compressor] ${content_type} output (${char_count} chars, ~${before_tokens} tokens) compressed to ~${after_tokens} tokens (${ratio}% saved). Summary injected below — full output is above."
+summary="[🐙] compressed ${content_type}: ~${before_tokens}→~${after_tokens} tokens (${ratio}% saved)"
 
 cat <<EOFJSON
 {"decision":"continue","additionalContext":"${summary}"}

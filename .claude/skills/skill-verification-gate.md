@@ -8,6 +8,9 @@ trigger: |
   - Before committing, creating PRs, or marking tasks done
   - After subagent reports success (verify independently)
   - Before moving to next task in a workflow
+paths:
+  - "**/test*"
+  - "**/*.test.*"
 ---
 
 # Verification Gate

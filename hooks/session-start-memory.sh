@@ -71,7 +71,7 @@ if [[ -n "$AUTONOMY" ]] && command -v jq &>/dev/null; then
             > "$SESSION_FILE" 2>/dev/null || true
     fi
 
-    echo "[Octopus] Restored preferences from auto-memory: autonomy=${AUTONOMY}"
+    echo "[🐙] restored: autonomy=${AUTONOMY}"
 fi
 
 # --- 4. Deploy managed-settings.d/ fragment (v9.19.0, CC v2.1.83+) ---

@@ -17,6 +17,9 @@ trigger: |
   - General pricing questions about API models
   - One-time cost lookups unrelated to a running workflow
   - Provider availability or configuration questions
+paths:
+  - "**/.claude-octopus/**"
+  - "**/analytics/**"
 ---
 
 # Cost Projections Skill

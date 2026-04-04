@@ -25,6 +25,12 @@ trigger: |
   "style guide for", or "UI/UX for my app".
 
   Execution: BM25 search via search.py + Claude synthesis with ui-ux-designer persona
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.svelte"
+  - "**/components/**"
 ---
 
 ## EXECUTION CONTRACT (MANDATORY - CANNOT SKIP)
