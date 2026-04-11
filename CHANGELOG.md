@@ -1,3 +1,11 @@
+## [9.21.0] - 2026-04-10
+
+### Changed
+
+- CC v2.1.89-101 sync — 15 new feature flags (137 total), PermissionDenied audit hook, session auto-titling, macOS CI matrix, BSD/GNU portability lint
+
+---
+
 ## [9.20.3] - 2026-04-10
 
 ### Fixed
