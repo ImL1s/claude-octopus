@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -eo pipefail
 # Cursor Agent CLI provider execution (v9.23.0)
 # Uses `agent -p` headless mode with --trust to skip workspace prompts.
 # Auth: Cursor OAuth session (via `agent login`), stored in ~/.cursor/
@@ -76,7 +77,7 @@ cursor_agent_execute() {
             return 1
         fi
         # Check for auth errors
-        if printf '%s' "$response" | grep -qiE 'unauthorized|auth|login|token|forbidden'; then
+        if printf '%s' "$response" | grep -ciE 'unauthorized|auth|login|token|forbidden' >/dev/null; then
             log ERROR "cursor-agent: Auth failure — run: agent login (or set CURSOR_API_KEY)"
             return 1
         fi

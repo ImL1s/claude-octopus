@@ -166,7 +166,7 @@ cmd_detect_providers() {
     echo ""
 
     # Check Cursor Agent CLI (optional — Grok 4.20 via Cursor subscription, v9.23.0)
-    if command -v agent &>/dev/null && agent --version 2>&1 | grep -qE '^20[0-9]{2}\.'; then
+    if command -v agent &>/dev/null && agent --version 2>&1 | grep -cE '^20[0-9]{2}\.' >/dev/null; then
         local cursor_auth="none"
         if [[ -n "${CURSOR_API_KEY:-}" ]]; then
             cursor_auth="api-key"

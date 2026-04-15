@@ -685,7 +685,7 @@ check_provider_health() {
                 return 1
             fi
             # Verify binary identity — `agent` is a generic name
-            if ! agent --version 2>&1 | grep -qE '^20[0-9]{2}\.'; then
+            if ! agent --version 2>&1 | grep -cE '^20[0-9]{2}\.' >/dev/null; then
                 echo "cursor-agent: 'agent' binary is not Cursor Agent CLI" >&2
                 return 1
             fi

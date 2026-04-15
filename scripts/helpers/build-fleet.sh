@@ -48,7 +48,7 @@ command -v copilot >/dev/null 2>&1 && AVAILABLE_CLI+=(copilot)
 command -v qwen >/dev/null 2>&1 && AVAILABLE_CLI+=(qwen)
 command -v opencode >/dev/null 2>&1 && AVAILABLE_CLI+=(opencode)
 command -v ollama >/dev/null 2>&1 && curl -sf http://localhost:11434/api/tags >/dev/null 2>&1 && AVAILABLE_CLI+=(ollama)
-command -v agent >/dev/null 2>&1 && agent --version 2>&1 | grep -qE '^20[0-9]{2}\.' && AVAILABLE_CLI+=(cursor-agent)
+command -v agent >/dev/null 2>&1 && agent --version 2>&1 | grep -cE '^20[0-9]{2}\.' >/dev/null && AVAILABLE_CLI+=(cursor-agent)
 [[ -n "${PERPLEXITY_API_KEY:-}" ]] && AVAILABLE_CLI+=(perplexity)
 [[ -n "${OPENROUTER_API_KEY:-}" ]] && AVAILABLE_CLI+=(openrouter)
 

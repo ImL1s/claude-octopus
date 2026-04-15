@@ -111,6 +111,7 @@ list_models() {
         o3 o3-pro o3-mini
         gemini-3.1-pro-preview gemini-3-flash-preview gemini-3-pro-image-preview
         claude-sonnet-4.6 claude-opus-4.6 claude-opus-4.6-fast
+        grok-4-20 grok-4-20-thinking composer-2-fast composer-2
         z-ai/glm-5 moonshotai/kimi-k2.5 deepseek/deepseek-r1-0528
         sonar-pro sonar
     )
