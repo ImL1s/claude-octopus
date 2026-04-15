@@ -684,10 +684,9 @@ check_provider_health() {
                 echo "cursor-agent: CLI not found in PATH" >&2
                 return 1
             fi
-            # Check auth: env var or config files
+            # Check auth: env var or Cursor session
             if [[ -z "${CURSOR_API_KEY:-}" ]] && \
-               [[ ! -f "${HOME}/.cursor-agent/config.json" ]] && \
-               [[ ! -f "${HOME}/.cursor-agent/credentials.json" ]]; then
+               [[ ! -f "${HOME}/.cursor/agent-cli-state.json" ]]; then
                 echo "cursor-agent: not authenticated (run: agent login or set CURSOR_API_KEY)" >&2
                 return 1
             fi

@@ -187,10 +187,8 @@ doctor_check_providers() {
         local cursor_auth="none"
         if [[ -n "${CURSOR_API_KEY:-}" ]]; then
             cursor_auth="env:CURSOR_API_KEY"
-        elif [[ -f "${HOME}/.cursor-agent/config.json" ]]; then
-            cursor_auth="config"
-        elif [[ -f "${HOME}/.cursor-agent/credentials.json" ]]; then
-            cursor_auth="credentials"
+        elif [[ -f "${HOME}/.cursor/agent-cli-state.json" ]]; then
+            cursor_auth="cursor-session"
         fi
         if [[ "$cursor_auth" != "none" ]]; then
             doctor_add "cursor-agent" "providers" "pass" \
