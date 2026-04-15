@@ -38,6 +38,11 @@ get_model_catalog() {
         claude-sonnet-4.6)      echo "200|yes|yes|no|claude|standard|active" ;;
         claude-opus-4.6)        echo "200|yes|yes|yes|claude|premium|active" ;;
         claude-opus-4.6-fast)   echo "200|yes|yes|yes|claude|premium|active" ;;
+        # Cursor Agent (Grok via Cursor subscription)
+        grok-4-20)              echo "131|yes|no|no|cursor-agent|standard|active" ;;
+        grok-4-20-thinking)     echo "131|yes|no|yes|cursor-agent|premium|active" ;;
+        composer-2-fast)        echo "200|yes|no|no|cursor-agent|standard|active" ;;
+        composer-2)             echo "200|yes|no|no|cursor-agent|premium|active" ;;
         # OpenRouter
         z-ai/glm-5)             echo "203|yes|no|no|openrouter|standard|active" ;;
         moonshotai/kimi-k2.5)   echo "262|yes|yes|no|openrouter|standard|active" ;;

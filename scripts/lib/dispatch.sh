@@ -99,6 +99,9 @@ get_agent_command() {
         qwen|qwen-research)  # v9.10.0: Qwen CLI — fork of Gemini CLI (free tier)
             echo "env NODE_NO_WARNINGS=1 qwen -o text --approval-mode yolo"
             ;;
+        cursor-agent)  # v9.23.0: Cursor Agent CLI — Grok 4.20 via Cursor subscription
+            echo "agent --trust --output-format text --max-turns 1"
+            ;;
         opencode|opencode-fast|opencode-research)  # v9.11.0: OpenCode CLI — multi-provider router
             model=$(get_agent_model "$agent_type" "$phase" "$role")
             # Uses default text output (ANSI stripped by caller) — consistent with other providers
@@ -168,6 +171,7 @@ get_agent_model() {
         openrouter*) provider="openrouter" ;;
         perplexity*) provider="perplexity" ;;
         qwen*)       provider="qwen" ;;
+        cursor-agent*) provider="cursor-agent" ;;
         opencode*)   provider="opencode" ;;
     esac
 
@@ -201,6 +205,7 @@ validate_model_allowed() {
         openrouter) allowlist_var="OCTOPUS_OPENROUTER_ALLOWED_MODELS" ;;
         perplexity) allowlist_var="OCTOPUS_PERPLEXITY_ALLOWED_MODELS" ;;
         qwen)       allowlist_var="OCTOPUS_QWEN_ALLOWED_MODELS" ;;
+        cursor-agent) allowlist_var="OCTOPUS_CURSOR_ALLOWED_MODELS" ;;
         opencode)   allowlist_var="OCTOPUS_OPENCODE_ALLOWED_MODELS" ;;
         *)          return 0 ;;  # Unknown provider — allow
     esac

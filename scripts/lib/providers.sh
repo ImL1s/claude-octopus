@@ -679,6 +679,19 @@ check_provider_health() {
                 return 1
             fi
             ;;
+        cursor-agent)
+            if ! command -v agent &>/dev/null; then
+                echo "cursor-agent: CLI not found in PATH" >&2
+                return 1
+            fi
+            # Check auth: env var or config files
+            if [[ -z "${CURSOR_API_KEY:-}" ]] && \
+               [[ ! -f "${HOME}/.cursor-agent/config.json" ]] && \
+               [[ ! -f "${HOME}/.cursor-agent/credentials.json" ]]; then
+                echo "cursor-agent: not authenticated (run: agent login or set CURSOR_API_KEY)" >&2
+                return 1
+            fi
+            ;;
     esac
     return 0
 }
@@ -689,7 +702,7 @@ check_all_providers() {
     local healthy=0 unhealthy=0
     local -a results=()
 
-    for provider in codex gemini claude perplexity openrouter ollama copilot qwen; do
+    for provider in codex gemini claude perplexity openrouter ollama copilot qwen cursor-agent; do
         local diag
         if diag=$(check_provider_health "$provider" 2>&1); then
             results+=("  ✓ $provider")

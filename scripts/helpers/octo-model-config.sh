@@ -8,7 +8,7 @@ CONFIG_FILE="${HOME}/.claude-octopus/config/providers.json"
 CACHE_FILE="/tmp/octo-model-cache-${USER:-${USERNAME:-unknown}}-${CLAUDE_CODE_SESSION:-global}.json"
 
 # Known providers and phases for validation
-KNOWN_PROVIDERS="codex gemini claude perplexity openrouter opencode copilot ollama qwen"
+KNOWN_PROVIDERS="codex gemini claude perplexity openrouter opencode copilot ollama qwen cursor-agent"
 KNOWN_PHASES="discover define develop deliver quick debate review security research"
 
 # Colors
