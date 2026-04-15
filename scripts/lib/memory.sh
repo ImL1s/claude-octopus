@@ -6,7 +6,7 @@
 #   OCTOPUS_MEMORY_BACKEND  "auto" (default) | comma-separated list
 #   OCTOPUS_MEMORY_SCOPE    override scope label (default: repo basename)
 
-set -euo pipefail
+set -eo pipefail
 
 _MEMORY_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _MEMORY_PLUGIN_DIR="$(cd "${_MEMORY_LIB_DIR}/../.." && pwd)"
