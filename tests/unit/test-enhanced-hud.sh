@@ -206,6 +206,28 @@ grep -qE '1F480|💀' "$HUD_MJS" && \
 
 echo ""
 
+# ── Group 8: Cost Projection Integration (4 tests) ──────────────────────────
+echo "Group 8: Cost Projection Integration"
+echo "------------------------------------------------------------"
+
+grep -q 'function costProjection' "$HUD_MJS" && \
+    assert_pass "8.1 costProjection function exists" || \
+    assert_fail "8.1 costProjection function exists"
+
+grep -q 'completed_phases' "$HUD_MJS" && \
+    assert_pass "8.2 costProjection reads completed_phases from session" || \
+    assert_fail "8.2 costProjection reads completed_phases from session"
+
+grep -q 'OCTO_BUDGET_CEILING' "$HUD_MJS" && \
+    assert_pass "8.3 costProjection checks OCTO_BUDGET_CEILING env var" || \
+    assert_fail "8.3 costProjection checks OCTO_BUDGET_CEILING env var"
+
+grep -q 'costProjection(session' "$HUD_MJS" && \
+    assert_pass "8.4 costProjection wired into workflow row render" || \
+    assert_fail "8.4 costProjection wired into workflow row render"
+
+echo ""
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo "============================================================"
 TOTAL=$((PASS + FAIL))

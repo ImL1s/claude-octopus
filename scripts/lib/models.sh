@@ -23,8 +23,8 @@ get_model_catalog() {
         gpt-5.3-codex)          echo "400|yes|yes|no|codex|standard|active" ;;
         gpt-5.3-codex-spark)    echo "128|yes|no|no|codex|standard|active" ;;
         gpt-5.2-codex)          echo "400|yes|yes|no|codex|standard|active" ;;
-        gpt-5-codex-mini)       echo "400|yes|no|no|codex|budget|active" ;;
-        gpt-5.1-codex-mini)     echo "400|yes|no|no|codex|budget|active" ;;
+        gpt-5.4-mini)       echo "400|yes|no|no|codex|budget|active" ;;
+        gpt-5.4-mini)     echo "400|yes|no|no|codex|budget|active" ;;
         gpt-5.1-codex-max)      echo "400|yes|yes|no|codex|standard|active" ;;
         # Reasoning models
         o3)                     echo "200|yes|no|yes|codex|premium|active" ;;
@@ -41,7 +41,11 @@ get_model_catalog() {
         # OpenRouter
         z-ai/glm-5)             echo "203|yes|no|no|openrouter|standard|active" ;;
         moonshotai/kimi-k2.5)   echo "262|yes|yes|no|openrouter|standard|active" ;;
-        deepseek/deepseek-r1)   echo "164|yes|no|yes|openrouter|standard|active" ;;
+        deepseek/deepseek-r1-0528) echo "164|yes|no|yes|openrouter|standard|active" ;;
+        # OpenCode (multi-provider router — models use provider/model format)
+        google/gemini-2.5-flash) echo "1000|yes|no|no|opencode|budget|active" ;;
+        openai/gpt-5.4)         echo "400|yes|yes|no|opencode|premium|active" ;;
+        openai/gpt-5.4-mini)    echo "400|yes|no|no|opencode|budget|active" ;;
         # Perplexity
         sonar-pro)              echo "128|no|no|no|perplexity|standard|active" ;;
         sonar)                  echo "128|no|no|no|perplexity|budget|active" ;;
@@ -98,11 +102,11 @@ list_models() {
 
     local -a all_models=(
         gpt-5.4 gpt-5.4-pro gpt-5.3-codex gpt-5.2-codex
-        gpt-5-codex-mini gpt-5.1-codex-max
+        gpt-5.4-mini gpt-5.1-codex-max
         o3 o3-pro o3-mini
         gemini-3.1-pro-preview gemini-3-flash-preview gemini-3-pro-image-preview
         claude-sonnet-4.6 claude-opus-4.6 claude-opus-4.6-fast
-        z-ai/glm-5 moonshotai/kimi-k2.5 deepseek/deepseek-r1
+        z-ai/glm-5 moonshotai/kimi-k2.5 deepseek/deepseek-r1-0528
         sonar-pro sonar
     )
 

@@ -33,21 +33,26 @@ test_mcp_json_valid_json() {
     fi
 }
 
-test_mcp_server_entry_point() {
-    test_case ".mcp.json references correct server entry point"
-    if grep -q 'mcp-server/dist/index.js' "$PROJECT_ROOT/.mcp.json"; then
+test_mcp_server_opt_in() {
+    test_case ".mcp.json has empty mcpServers (opt-in model)"
+    if python3 -c "
+import json, sys
+m = json.load(open('$PROJECT_ROOT/.mcp.json'))
+servers = m.get('mcpServers', {})
+sys.exit(0 if len(servers) == 0 else 1)
+" 2>/dev/null; then
         test_pass
     else
-        test_fail ".mcp.json should reference mcp-server/dist/index.js"
+        test_fail ".mcp.json should have empty mcpServers (server is opt-in)"
     fi
 }
 
-test_mcp_env_variable() {
-    test_case ".mcp.json sets CLAUDE_OCTOPUS_MCP_MODE env var"
-    if grep -q 'CLAUDE_OCTOPUS_MCP_MODE' "$PROJECT_ROOT/.mcp.json"; then
+test_mcp_opt_in_guard() {
+    test_case "MCP server has OCTO_CLAW_ENABLED opt-in guard"
+    if grep -q 'OCTO_CLAW_ENABLED' "$PROJECT_ROOT/mcp-server/src/index.ts"; then
         test_pass
     else
-        test_fail ".mcp.json should set CLAUDE_OCTOPUS_MCP_MODE"
+        test_fail "mcp-server/src/index.ts should check OCTO_CLAW_ENABLED"
     fi
 }
 
@@ -258,7 +263,8 @@ test_openclaw_flags_before_command() {
         return
     fi
 
-    if grep -q '\.\.\.flags, command, prompt' "$src"; then
+    # Pattern: [...flags, command, ...postFlags, prompt] or [...flags, command, prompt]
+    if grep -q '\.\.\.flags, command' "$src"; then
         test_pass
     else
         test_fail "OpenClaw extension should pass flags before command"
@@ -314,9 +320,8 @@ test_registry_count_matches() {
 
 test_build_check_mode() {
     test_case "build-openclaw.sh --check mode succeeds (registry in sync)"
-    local output
-    output=$("$PROJECT_ROOT/scripts/build-openclaw.sh" --check 2>&1)
-    local exit_code=$?
+    local output exit_code
+    output=$("$PROJECT_ROOT/scripts/build-openclaw.sh" --check 2>&1) && exit_code=0 || exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
         test_pass
@@ -443,9 +448,8 @@ test_validate_script_exists() {
 
 test_validate_script_passes() {
     test_case "validate-openclaw.sh passes all checks"
-    local output
-    output=$("$PROJECT_ROOT/tests/validate-openclaw.sh" 2>&1)
-    local exit_code=$?
+    local output exit_code
+    output=$("$PROJECT_ROOT/tests/validate-openclaw.sh" 2>&1) && exit_code=0 || exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
         test_pass
@@ -461,8 +465,8 @@ test_validate_script_passes() {
 # MCP Server Configuration
 test_mcp_json_exists
 test_mcp_json_valid_json
-test_mcp_server_entry_point
-test_mcp_env_variable
+test_mcp_server_opt_in
+test_mcp_opt_in_guard
 
 # MCP Server Package
 test_mcp_package_json

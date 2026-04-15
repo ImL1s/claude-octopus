@@ -1,6 +1,7 @@
 ---
 name: octopus-quick
-description: Quick execution for ad-hoc tasks without workflow overhead
+effort: low
+description: Quick execution for ad-hoc tasks without full workflow overhead — use for small, self-contained requests
 aliases:
   - quick
   - quick-mode
@@ -152,13 +153,13 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
 ```bash
 # Update state with quick task execution
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" write_decision \
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" write_decision \
   "quick" \
   "$(git log -1 --pretty=%s)" \
   "Ad-hoc task executed in quick mode"
 
 # Update metrics
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics \
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_metrics \
   "execution_time" \
   "1"  # Estimated in minutes
 ```

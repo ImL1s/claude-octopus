@@ -1,8 +1,29 @@
 ---
-description: "Dark Factory Mode - Spec-in, software-out autonomous pipeline"
+description: "\"Dark Factory Mode - Spec-in, software-out autonomous pipeline\""
 ---
 
 # Factory - Dark Factory Mode (v8.25.0)
+
+## MANDATORY COMPLIANCE — DO NOT SKIP
+
+**When the user invokes `/octo:factory`, you MUST execute the full autonomous pipeline below. You are PROHIBITED from:**
+- Building the software directly without running the spec-driven pipeline
+- Skipping the embrace workflow or quality gates
+- Deciding the spec is "simple enough" to implement without multi-provider synthesis
+- Substituting a single-model implementation for the multi-LLM factory pipeline
+
+**The user chose Dark Factory deliberately.** They want spec-in, software-out with full multi-AI orchestration, adversarial review, and quality gates. If you catch yourself thinking "I can just implement this directly" — STOP. That is the exact rationalization this instruction prohibits.
+
+### EXECUTION MECHANISM — NON-NEGOTIABLE
+
+**You MUST execute this command by calling `orchestrate.sh` as documented below. You are PROHIBITED from:**
+- ❌ Doing the work yourself using only Claude-native tools (Agent, Read, Grep, Write)
+- ❌ Using a single Claude subagent instead of multi-provider dispatch via orchestrate.sh
+- ❌ Skipping orchestrate.sh because "I can do this faster directly"
+
+**Multi-LLM orchestration is the purpose of this command.** If you execute using only Claude, you've violated the command's contract.
+
+---
 
 ## INSTRUCTIONS FOR CLAUDE
 
@@ -23,8 +44,15 @@ After receiving answers: validate spec path exists, set overrides, proceed.
 
 Check via bash:
 ```bash
-codex_available=$(command -v codex &> /dev/null && echo "Available" || echo "Not installed")
-gemini_available=$(command -v gemini &> /dev/null && echo "Available" || echo "Not installed")
+codex_available="Not installed"
+if command -v codex >/dev/null 2>&1; then
+  codex_available="Available"
+fi
+
+gemini_available="Not installed"
+if command -v gemini >/dev/null 2>&1; then
+  gemini_available="Available"
+fi
 ```
 
 Display the factory banner:
@@ -53,10 +81,14 @@ Read the spec file and verify it contains:
 
 If the spec is minimal, warn the user but proceed — factory mode works with thin specs (lower quality results).
 
+### Step 3.5: Adversarial Scenario Coverage Gate
+
+Before committing to the expensive embrace phase, verify scenario coverage by dispatching the spec to a second provider. This quick check (~30 seconds) can save a wasted $2.00 factory run. See skill-factory.md Step 4.5 for details. Skip with `--fast`.
+
 ### Step 4: Execute Factory Pipeline
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh factory --spec "<spec-path>"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh factory --spec "<spec-path>"
 ```
 
 With optional flags:

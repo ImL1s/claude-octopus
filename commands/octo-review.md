@@ -1,9 +1,30 @@
 ---
-command: review
-description: Expert multi-LLM code review with inline PR comments — competes with CC Code Review
+description: "Expert multi-LLM code review with inline PR comments — competes with CC Code Review"
 ---
 
 # /octo:review
+
+## MANDATORY COMPLIANCE — DO NOT SKIP
+
+**When the user invokes `/octo:review`, you MUST execute the multi-LLM review workflow below. You are PROHIBITED from:**
+- Doing a direct code review without running the structured workflow
+- Deciding the scope is "too broad" and narrowing it yourself — the user chose the scope
+- Skipping the provider check or AskUserQuestion steps
+- Substituting a simpler review approach because it seems "more effective"
+- Running two background Sonnet agents instead of the full multi-provider pipeline
+
+**The user chose `/octo:review` over a regular code review deliberately.** They want multi-provider perspectives (Codex + Gemini + Claude), not a single-model review. If you catch yourself thinking "a focused audit would be more effective" — STOP. That is the exact rationalization this instruction prohibits.
+
+### EXECUTION MECHANISM — NON-NEGOTIABLE
+
+**You MUST execute this command by calling `orchestrate.sh` as documented below. You are PROHIBITED from:**
+- ❌ Doing the work yourself using only Claude-native tools (Agent, Read, Grep, Write)
+- ❌ Using a single Claude subagent instead of multi-provider dispatch via orchestrate.sh
+- ❌ Skipping orchestrate.sh because "I can do this faster directly"
+
+**Multi-LLM orchestration is the purpose of this command.** If you execute using only Claude, you've violated the command's contract.
+
+---
 
 🐙 **CLAUDE OCTOPUS ACTIVATED** — Multi-LLM Code Review
 
@@ -21,13 +42,13 @@ When the user invokes this command (e.g., `/octo:review <arguments>`):
 
 **Determine mode based on session autonomy:**
 
-If `AUTONOMY_MODE` env var is `autonomous` or session is running headlessly, skip Q&A and auto-infer:
+If `AUTONOMY_MODE` env var is `autonomous`, or session is running headlessly, or `OCTOPUS_WORKFLOW_PHASE` is set (indicating a pipeline context like `/octo:develop` or `/octo:embrace`), skip Q&A and auto-infer with ALL focus areas:
 1. Run `git diff --cached` — if non-empty, `target=staged`
 2. Run `gh pr view --json number` — if open PR exists, set `target=<pr_number>`
 3. Otherwise `target=working-tree`
-4. Set `provenance=unknown`, `autonomy=autonomous`, `publish=ask`, `debate=auto`
+4. Set `provenance=unknown`, `autonomy=autonomous`, `publish=ask`, `debate=auto`, `focus=["correctness","security","architecture","tdd"]`
 
-**Otherwise (supervised mode), use AskUserQuestion:**
+**Otherwise (supervised mode), you MUST use AskUserQuestion to ask these questions:**
 
 ```javascript
 AskUserQuestion({
@@ -51,7 +72,8 @@ AskUserQuestion({
         {label: "Correctness", description: "Logic bugs, edge cases, regressions"},
         {label: "Security & Edge Cases", description: "OWASP, race conditions, partial failures"},
         {label: "Architecture", description: "API contracts, integration, breaking changes"},
-        {label: "TDD discipline", description: "Verify failing-test-first evidence and minimal implementation"}
+        {label: "TDD discipline", description: "Verify failing-test-first evidence and minimal implementation"},
+        {label: "All areas (Recommended)", description: "Correctness + Security + Architecture + TDD"}
       ]
     },
     {
@@ -78,6 +100,18 @@ AskUserQuestion({
   ]
 })
 ```
+
+**WAIT for the user's answers before proceeding.**
+
+## Step 1b: Scope Drift Check (informational)
+
+Before building the review profile, run scope drift detection to compare the diff against stated intent. This gives reviewers early awareness of scope creep or missing requirements.
+
+Load `skills/skill-scope-drift/SKILL.md` and execute the drift analysis. Display the structured report (CLEAN / DRIFT DETECTED / REQUIREMENTS MISSING). **This never blocks the review** — proceed to Step 2 regardless.
+
+If no intent sources are found (no TODOS.md, no PR body, no commit messages), skip silently.
+
+---
 
 ## Step 2: Build Review Profile
 

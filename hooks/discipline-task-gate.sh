@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# discipline-task-gate.sh — Brainstorm gate reminder on TaskCreated
+# Only fires when discipline mode is on
+
+set -euo pipefail
+
+DISCIPLINE_CONF="${HOME}/.claude-octopus/config/discipline.conf"
+
+if [[ ! -f "$DISCIPLINE_CONF" ]] || ! grep -q "OCTOPUS_DISCIPLINE=on" "$DISCIPLINE_CONF" 2>/dev/null; then
+    echo '{}'
+    exit 0
+fi
+
+# Discipline is on — remind about brainstorm gate
+printf '{"hookSpecificOutput":{"hookEventName":"TaskCreated","additionalContext":"DISCIPLINE BRAINSTORM GATE: A task was just created. Before implementing, confirm the approach has been planned. If this is new work without a prior discussion, pause and use skill-thought-partner or skill-writing-plans first."}}\n'

@@ -116,7 +116,9 @@ suite "3. HARD-GATE XML Enforcement Tags"
 # 3.1-3.5 Check each skill for HARD-GATE tag
 for skill in skill-debug skill-tdd skill-factory skill-verify skill-deep-research; do
   SKILL_FILE="$PLUGIN_DIR/.claude/skills/${skill}.md"
-  if grep -q '<HARD-GATE>' "$SKILL_FILE" && grep -q '</HARD-GATE>' "$SKILL_FILE"; then
+  # skill-verify lives in OpenClaw format only (skills/skill-verify/SKILL.md)
+  [[ ! -f "$SKILL_FILE" ]] && SKILL_FILE="$PLUGIN_DIR/skills/${skill}/SKILL.md"
+  if grep -q '<HARD-GATE>' "$SKILL_FILE" 2>/dev/null && grep -q '</HARD-GATE>' "$SKILL_FILE" 2>/dev/null; then
     pass "${skill} contains HARD-GATE tags"
   else
     fail "${skill} missing HARD-GATE tags"
@@ -129,7 +131,7 @@ done
 suite "4. Human-Only Invocation Flag"
 
 # 4.1-4.5 Check each skill for human_only
-for skill in skill-factory skill-deep-research skill-adversarial-security flow-parallel skill-ship; do
+for skill in skill-factory skill-deep-research skill-security-audit flow-parallel skill-ship; do
   SKILL_FILE="$PLUGIN_DIR/.claude/skills/${skill}.md"
   if grep -q 'invocation: human_only' "$SKILL_FILE"; then
     pass "${skill} has invocation: human_only"

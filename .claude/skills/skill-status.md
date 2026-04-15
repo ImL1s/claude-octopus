@@ -1,5 +1,6 @@
 ---
 name: skill-status
+effort: low
 user-invocable: true
 description: "Show where you are in the workflow and what to do next — use for progress checks and orientation"
 trigger: |

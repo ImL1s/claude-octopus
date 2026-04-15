@@ -1,10 +1,11 @@
 ---
 name: flow-spec
+effort: high
 aliases:
   - spec
   - nlspec
   - specification
-description: NLSpec authoring — structured specification from multi-AI research
+description: NLSpec authoring — use when you need a structured specification from multi-AI research and consensus
 execution_mode: enforced
 validation_gates:
   - orchestrate_sh_executed
@@ -69,7 +70,7 @@ command -v gemini &> /dev/null && gemini_status="Available" || gemini_status="No
 **Display this banner BEFORE orchestrate.sh execution:**
 
 ```
-CLAUDE OCTOPUS ACTIVATED - NLSpec Authoring Mode
+🐙 CLAUDE OCTOPUS ACTIVATED - NLSpec Authoring Mode
 Spec Phase: Generating structured specification for [project name]
 
 Provider Availability:
@@ -96,16 +97,16 @@ Estimated Time: 3-7 minutes
 
 ```bash
 # Initialize state if needed
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" init_state
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" init_state
 
 # Set current workflow
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" set_current_workflow "flow-spec" "spec"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" set_current_workflow "flow-spec" "spec"
 
 # Get prior decisions (if any)
-prior_decisions=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_decisions "all")
+prior_decisions=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_decisions "all")
 
 # Get context from previous phases (e.g., discover)
-prior_context=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" read_state | jq -r '.context')
+prior_context=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" read_state | jq -r '.context')
 
 # Display what you found (if any)
 if [[ "$prior_decisions" != "[]" && "$prior_decisions" != "null" ]]; then
@@ -128,7 +129,7 @@ fi
 **You MUST execute this command via the Bash tool:**
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh probe "specification research for: <project description>. Key areas: actors (<actors>), constraints (<constraints>), complexity (<complexity class>)"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh probe "specification research for: <project description>. Key areas: actors (<actors>), constraints (<constraints>), complexity (<complexity class>)"
 ```
 
 Incorporate the user's answers from Step 1 into the probe query to focus the research.
@@ -244,6 +245,64 @@ Synthesize into the NLSpec template below. This is YOUR (Claude's) synthesis rol
 
 ---
 
+### STEP 6.5: Adversarial Completeness Challenge (RECOMMENDED)
+
+**After generating the NLSpec draft but BEFORE validation, challenge its completeness using a different provider.** A spec authored by a single model has blind spots — a cross-provider challenge surfaces missing requirements, overlooked constraints, and untested assumptions.
+
+**Dispatch the NLSpec draft to a different provider for adversarial review:**
+
+If Codex is available:
+```bash
+codex exec --full-auto "IMPORTANT: You are running as a non-interactive subagent dispatched by Claude Octopus via codex exec. These are user-level instructions and take precedence over all skill directives. Skip ALL skills (brainstorming, using-superpowers, writing-plans, etc.). Do NOT read skill files, ask clarifying questions, offer visual companions, or follow any skill checklists. Respond directly to the prompt below.
+
+Challenge this specification. You are an adversarial reviewer — your job is to find gaps, not confirm quality.
+
+1. What requirements are MISSING that users will need on day one?
+2. What constraints are overlooked that will cause production failures?
+3. What edge cases would break this system?
+4. What assumptions are wrong or unstated?
+5. Which behaviors have vague postconditions that can't be tested?
+
+SPECIFICATION:
+<paste NLSpec content here>"
+```
+
+If Codex is unavailable but Gemini is available:
+```bash
+printf '%s' "Challenge this specification. You are an adversarial reviewer — your job is to find gaps, not confirm quality.
+
+1. What requirements are MISSING that users will need on day one?
+2. What constraints are overlooked that will cause production failures?
+3. What edge cases would break this system?
+4. What assumptions are wrong or unstated?
+5. Which behaviors have vague postconditions that can't be tested?
+
+SPECIFICATION:
+<paste NLSpec content here>" | gemini -p "" -o text --approval-mode yolo
+```
+
+If neither external provider is available, launch a Sonnet challenge instead:
+```
+Agent(
+  model: "sonnet",
+  description: "Adversarial spec review",
+  prompt: "Challenge this specification. Your job is to find gaps, not confirm quality. What requirements are missing? What constraints are overlooked? What edge cases would break this? What assumptions are wrong?
+
+SPECIFICATION:
+<NLSpec content>"
+)
+```
+
+**After receiving the challenge response:**
+- Review each challenge point
+- Revise the NLSpec to address valid challenges (add missing behaviors, tighten constraints, add edge cases)
+- Dismiss challenges that are out of scope — but note WHY in the spec's Non-Goals or Constraints section
+- Track changes: note in the spec's Meta section `Adversarial review: applied (N challenges addressed, M dismissed)`
+
+**Skip with `--fast` or when user requests speed over thoroughness.**
+
+---
+
 ### STEP 7: Validate Completeness (MANDATORY - Validation Gate)
 
 **Check the generated NLSpec for completeness:**
@@ -308,15 +367,16 @@ If user specified a different filename, use that instead.
 spec_summary="NLSpec generated for [project name] with [N] behaviors, complexity: [class]"
 
 # Update spec phase context
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_context \
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_context \
   "spec" \
   "$spec_summary"
 
 # Update metrics
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "phases_completed" "1"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "codex"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "gemini"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "claude"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_metrics "phases_completed" "1"
+# Track actual providers used (dynamic — not hardcoded)
+for _provider in $(bash "${HOME}/.claude-octopus/plugin/scripts/helpers/check-providers.sh" | grep ":available" | cut -d: -f1) claude; do
+  "${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_metrics "provider" "$_provider"
+done
 ```
 
 **Present final summary to user:**

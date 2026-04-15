@@ -6,6 +6,11 @@
 
 set -euo pipefail
 
+# Respect bypassPermissions mode
+for _sf in "${CLAUDE_PROJECT_DIR:-.}/.claude/settings.local.json" "${CLAUDE_PROJECT_DIR:-.}/.claude/settings.json" "$HOME/.claude/settings.json"; do
+    [[ -f "$_sf" ]] && grep -q '"bypassPermissions"' "$_sf" 2>/dev/null && { echo '{"decision":"continue"}'; exit 0; }
+done
+
 # Only active during scheduled job execution
 if [[ -z "${OCTOPUS_JOB_ID:-}" ]]; then
     echo '{"decision": "continue"}'

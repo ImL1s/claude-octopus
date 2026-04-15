@@ -7,6 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 AGENTS_DIR="$PROJECT_ROOT/.claude/agents"
 ORCHESTRATE="$PROJECT_ROOT/scripts/orchestrate.sh"
+# Combined search target (functions decomposed to lib/ in v9.7.7+)
+ALL_SRC=$(mktemp)
+trap 'rm -f "$ALL_SRC"' EXIT
+cat "$ORCHESTRATE" "$PROJECT_ROOT/scripts/lib/"*.sh > "$ALL_SRC" 2>/dev/null
 
 TEST_COUNT=0; PASS_COUNT=0; FAIL_COUNT=0
 pass() { TEST_COUNT=$((TEST_COUNT+1)); PASS_COUNT=$((PASS_COUNT+1)); echo "PASS: $1"; }
@@ -47,7 +51,7 @@ done
 
 # ── score_result_file has contract compliance factor ────────────────────────
 
-SCORE_FN=$(grep -A60 'score_result_file()' "$ORCHESTRATE" | head -65)
+SCORE_FN=$(grep -A60 'score_result_file()' "$ALL_SRC" | head -65)
 if echo "$SCORE_FN" | grep -q 'Factor 5.*[Cc]ontract' 2>/dev/null; then
     pass "score_result_file has Factor 5: contract compliance"
 else

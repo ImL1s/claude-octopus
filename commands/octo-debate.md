@@ -1,5 +1,5 @@
 ---
-description: "AI Debate Hub - Structured four-way debates between Claude, Sonnet, Gemini, and Codex"
+description: "\"AI Debate Hub - Structured four-way debates between Claude, Sonnet, Gemini, and Codex\""
 ---
 
 # Debate
@@ -12,6 +12,15 @@ Structured four-way AI debates between Claude, Sonnet, Gemini, and Codex.
 
 **When the user explicitly invokes `/octo:debate`, you MUST execute the structured debate workflow below.** You are PROHIBITED from answering the question directly, skipping the multi-provider debate, or deciding the topic is "too simple" for a four-way debate. The user chose this command deliberately — respect that choice.
 
+### EXECUTION MECHANISM — NON-NEGOTIABLE
+
+**You MUST dispatch work to external providers (Codex, Gemini, etc.) for this command. You are PROHIBITED from:**
+- ❌ Executing the entire task using only Claude-native tools
+- ❌ Using a single Agent subagent instead of multi-provider dispatch
+- ❌ Skipping provider dispatch because "I can handle this alone"
+
+**Multi-LLM orchestration is the purpose of this command.** Single-model execution defeats its purpose.
+
 ---
 
 ### Execution
@@ -19,9 +28,9 @@ Structured four-way AI debates between Claude, Sonnet, Gemini, and Codex.
 1. Follow the `skill-debate` instructions (Steps 1-7) exactly.
 2. Start with Step 1: check provider availability and display the visual indicator banner.
 3. Step 2: ask clarifying questions via AskUserQuestion before proceeding.
-4. Steps 3-5: parse arguments, set up debate folder, conduct rounds with all three participants.
+4. Steps 3-5: parse arguments, set up debate folder, conduct rounds with all four participants (Gemini CLI, Codex CLI, Sonnet Agent, Claude/Opus).
 5. Steps 6-7: write final synthesis and present results to the user.
-6. Apply quality gates and cost tracking from `skill-debate-integration` throughout.
+6. Apply quality gates and cost tracking from `skill-debate` throughout.
 
 ### Post-Completion — Interactive Next Steps
 

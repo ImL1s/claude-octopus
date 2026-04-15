@@ -19,7 +19,7 @@ fi
 
 # Build planning-relevant enforcement context
 read -r -d '' CONTEXT <<'RULES' || true
-<PLAN-MODE-RULES>
+<PLAN-MODE-RULES source="🐙 Octopus">
 ## Planning Mode Enforcement Rules
 
 These rules apply while in plan mode. They MUST be followed during planning

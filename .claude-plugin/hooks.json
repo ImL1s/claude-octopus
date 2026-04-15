@@ -8,7 +8,7 @@
       "hooks": [
         {
           "type": "prompt",
-          "prompt": "🐙 **CLAUDE OCTOPUS ACTIVATED** - Using external CLI providers (Codex/Gemini) for this task. This is NOT a Claude subagent - external APIs will be invoked."
+          "prompt": "\ud83d\udc19 **CLAUDE OCTOPUS ACTIVATED** - Using external CLI providers (Codex/Gemini) for this task. This is NOT a Claude subagent - external APIs will be invoked."
         },
         {
           "type": "command",
@@ -43,12 +43,25 @@
     {
       "matcher": {
         "tool": "Bash",
+        "pattern": "^\\s*codex\\s"
+      },
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/codex-exec-guard.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": {
+        "tool": "Bash",
         "pattern": "codex exec"
       },
       "hooks": [
         {
           "type": "prompt",
-          "prompt": "🔴 **Codex CLI Executing** - Using your OpenAI API credentials directly."
+          "prompt": "\ud83d\udd34 **Codex CLI Executing** - Using your OpenAI API credentials directly."
         }
       ]
     },
@@ -60,7 +73,7 @@
       "hooks": [
         {
           "type": "prompt",
-          "prompt": "🟡 **Gemini CLI Executing** - Using your Google API credentials directly."
+          "prompt": "\ud83d\udfe1 **Gemini CLI Executing** - Using your Google API credentials directly."
         }
       ]
     },
@@ -78,11 +91,39 @@
       ]
     },
     {
-      "matcher": {"tool": "EnterPlanMode"},
+      "matcher": {
+        "tool": "EnterPlanMode"
+      },
       "hooks": [
         {
           "type": "command",
           "command": "${CLAUDE_PLUGIN_ROOT}/hooks/plan-mode-interceptor.sh"
+        }
+      ]
+    },
+    {
+      "matcher": {
+        "tool": "Bash"
+      },
+      "if": "input matches '(rm\\s|mv\\s|git\\s+(push|reset|checkout\\s+\\.)|docker\\s+rm|DROP\\s+TABLE|sudo)'",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/careful-check.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": {
+        "tool": "Edit|Write"
+      },
+      "if": "env.OCTO_FREEZE_MODE == 'on'",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/freeze-check.sh",
+          "timeout": 5
         }
       ]
     }
@@ -90,13 +131,13 @@
   "PostToolUse": [
     {
       "matcher": {
-        "tool": "Bash|Agent|Write|Edit"
+        "tool": "Bash|Agent|Write|Edit|Read|WebFetch|Grep"
       },
       "hooks": [
         {
           "type": "command",
-          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/context-awareness.sh",
-          "timeout": 5
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-dispatch.sh",
+          "timeout": 10
         }
       ]
     },
@@ -129,6 +170,7 @@
         "tool": "Bash",
         "pattern": "orchestrate\\.sh.*(probe|grasp|tangle|ink|embrace)"
       },
+      "if": "env.OCTOPUS_WEBHOOK_URL",
       "hooks": [
         {
           "type": "command",
@@ -160,6 +202,15 @@
           "type": "command",
           "command": "${CLAUDE_PLUGIN_ROOT}/hooks/statusline-auto-repair.sh",
           "timeout": 5
+        }
+      ]
+    },
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/discipline-inject.sh",
+          "timeout": 3
         }
       ]
     }
@@ -270,6 +321,16 @@
           "timeout": 15
         }
       ]
+    },
+    {
+      "matcher": {},
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/workflow-verification.sh",
+          "timeout": 10
+        }
+      ]
     }
   ],
   "UserPromptSubmit": [
@@ -279,6 +340,96 @@
         {
           "type": "command",
           "command": "${CLAUDE_PLUGIN_ROOT}/hooks/user-prompt-submit.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": {},
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/done-criteria.sh\"",
+          "timeout": 5
+        }
+      ]
+    }
+  ],
+  "StopFailure": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-failure-log.sh",
+          "timeout": 5
+        }
+      ]
+    }
+  ],
+  "CwdChanged": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/cwd-changed.sh",
+          "timeout": 3
+        }
+      ]
+    }
+  ],
+  "TaskCreated": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/discipline-task-gate.sh",
+          "timeout": 3
+        }
+      ]
+    }
+  ],
+  "PostCompact": [
+    {
+      "matcher": {},
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-compact.sh",
+          "timeout": 10
+        }
+      ]
+    }
+  ],
+  "Elicitation": [
+    {
+      "matcher": {},
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/elicitation-handler.sh",
+          "timeout": 5
+        }
+      ]
+    }
+  ],
+  "ElicitationResult": [
+    {
+      "matcher": {},
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/elicitation-handler.sh result",
+          "timeout": 5
+        }
+      ]
+    }
+  ],
+  "PermissionDenied": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/hooks/permission-denied-log.sh",
           "timeout": 5
         }
       ]

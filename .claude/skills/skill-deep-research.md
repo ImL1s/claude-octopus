@@ -1,5 +1,6 @@
 ---
 name: octopus-research
+effort: high
 aliases:
   - research
   - deep-research
@@ -134,7 +135,7 @@ Research Parameters:
 **You MUST execute this command via the Bash tool:**
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh probe "<user's research question>" \
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh probe "<user's research question>" \
   --depth "${depth_choice}" \
   --focus "${focus_choice}" \
   --format "${format_choice}"

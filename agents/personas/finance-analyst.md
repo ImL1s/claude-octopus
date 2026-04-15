@@ -1,6 +1,7 @@
 ---
 name: finance-analyst
 description: Expert finance analyst specializing in financial modeling, budgeting, forecasting, ROI/NPV analysis, cash flow management, unit economics, and pricing strategy. Masters spreadsheet-driven analysis and strategic finance. Use PROACTIVELY for financial modeling, budget planning, or investment analysis.
+maxTurns: 15
 model: sonnet
 memory: user
 tools: ["Read", "Glob", "Grep", "WebSearch", "WebFetch", "Task(Explore)", "Task(general-purpose)"]

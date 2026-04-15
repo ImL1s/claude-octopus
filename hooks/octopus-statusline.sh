@@ -98,7 +98,7 @@ if command -v jq &>/dev/null; then
         esac
         echo -e "${CYAN}[🐙 Octopus]${RESET} ${PHASE_EMOJI} ${PHASE} | ${WARN_PREFIX}${BAR_COLOR}${BAR}${RESET} ${PCT}% | ${YELLOW}${COST_FMT}${RESET}${wt_suffix}"
     else
-        echo -e "${CYAN}[🐙]${RESET} ${WARN_PREFIX}${BAR_COLOR}${BAR}${RESET} ${PCT}% | ${YELLOW}${COST_FMT}${RESET}${wt_suffix}"
+        echo -e "${CYAN}[🐙 Octopus]${RESET} ${WARN_PREFIX}${BAR_COLOR}${BAR}${RESET} ${PCT}% | ${YELLOW}${COST_FMT}${RESET}${wt_suffix}"
     fi
     exit 0
 fi
@@ -122,4 +122,4 @@ PCT=$(_json_num "used_percentage")
 [[ -z "$PCT" ]] && PCT=0
 PCT=${PCT%%.*}  # truncate decimal
 
-echo "[🐙 $MODEL] ${PCT}% context"
+echo "[🐙 Octopus] ${PCT}% context"

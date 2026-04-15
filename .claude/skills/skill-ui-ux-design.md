@@ -6,7 +6,7 @@ aliases:
   - design
   - ui-design
   - ux-design
-description: "Design UI/UX with style guides, palettes, and component specs"
+description: "Design UI/UX systems with style guides, palettes, typography, and component specs for new interfaces"
 context: fork
 agent: Explore
 task_management: true
@@ -25,6 +25,12 @@ trigger: |
   "style guide for", or "UI/UX for my app".
 
   Execution: BM25 search via search.py + Claude synthesis with ui-ux-designer persona
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.svelte"
+  - "**/components/**"
 ---
 
 ## EXECUTION CONTRACT (MANDATORY - CANNOT SKIP)
@@ -84,6 +90,14 @@ AskUserQuestion({
 
 ### STEP 2: Display Banner
 
+**MANDATORY: You MUST use the Bash tool to run this provider check BEFORE displaying the banner. Do NOT skip it. Do NOT assume availability.**
+
+```bash
+bash "${HOME}/.claude-octopus/plugin/scripts/helpers/check-providers.sh"
+```
+
+**Use the ACTUAL results below. PROHIBITED: Showing only "🔵 Claude: Available ✓" without listing all providers.**
+
 ```
 🐙 **CLAUDE OCTOPUS ACTIVATED** - UI/UX Design Mode
 🎨 Design: [Brief description from user prompt]
@@ -109,7 +123,7 @@ Tools:
 ### STEP 3: Check Design Intelligence
 
 ```bash
-SEARCH_PY="${CLAUDE_PLUGIN_ROOT}/vendors/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py"
+SEARCH_PY="${HOME}/.claude-octopus/plugin/vendors/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py"
 if [ -f "$SEARCH_PY" ]; then
     python3 -c "import csv, re, math" 2>/dev/null && echo "READY" || echo "MISSING_PYTHON"
 else
@@ -117,7 +131,7 @@ else
 fi
 ```
 
-**If MISSING_SEARCH_PY**: Tell user to run `cd "${CLAUDE_PLUGIN_ROOT}" && git submodule update --init vendors/ui-ux-pro-max-skill`
+**If MISSING_SEARCH_PY**: Tell user to run `cd "${HOME}/.claude-octopus/plugin" && git submodule update --init vendors/ui-ux-pro-max-skill`
 **If MISSING_PYTHON**: Tell user python3 is required for design intelligence.
 
 ### STEP 4: Phase 1 — Discover (Design Research)
@@ -125,7 +139,7 @@ fi
 **You MUST execute at least 3 of these searches. This is NOT optional.**
 
 ```bash
-SEARCH_PY="${CLAUDE_PLUGIN_ROOT}/vendors/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py"
+SEARCH_PY="${HOME}/.claude-octopus/plugin/vendors/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py"
 
 # 1. Product type search — what design patterns fit this product?
 python3 "$SEARCH_PY" "<user's product description>" --domain product
@@ -152,9 +166,82 @@ python3 "$SEARCH_PY" "<user's requirements>" --stack <stack>
 
 **Collect all search results before proceeding to Phase 2.**
 
+### STEP 4b: Design Shotgun Mode (Auto-Activated When 3+ Providers Available)
+
+**This step runs automatically when the provider check in Step 2 detected 3 or more available providers (counting Claude as always available).** When fewer than 3 providers are available, skip to Step 5 and use standard single-direction mode.
+
+Dispatch the same design brief to multiple providers in parallel. Each provider generates an independent design direction without seeing the others' work.
+
+**Launch 3+ variant agents in parallel using the Agent tool with `run_in_background: true`:**
+
+Each agent receives:
+```
+Design a visual direction for: [user's product description]
+Product type: [from Step 1]
+Stack: [from Step 1]
+Search context: [key findings from Step 4 BM25 searches]
+
+Produce:
+1. A style name (2-3 words, e.g., "Warm Minimalism", "Bold Industrial", "Soft Gradient")
+2. Primary color palette (3-5 colors with hex values)
+3. Font pairing (heading + body)
+4. Layout philosophy (e.g., "generous whitespace with card-based content")
+5. One paragraph describing the overall feel
+
+Be distinctive — take a clear position rather than playing it safe.
+```
+
+**Dispatch to different providers for maximum diversity:**
+- 🔴 Codex: implementation-pragmatic direction (what builds fast and scales)
+- 🟡 Gemini: trend-aware direction (what's current in the design ecosystem)
+- 🔵 Claude: user-centered direction (what serves the audience best)
+- 🟤 OpenCode / 🟢 Copilot / 🟣 Qwen: additional variants if available
+
+**After all variants return, present a comparison board:**
+
+```
+🎨 **Design Shotgun — 3 Variants**
+
+━━━ Variant A: "Warm Minimalism" (🔴 Codex) ━━━
+Colors: #F5F0EB, #2D2A26, #E07A5F, #81B29A, #F2CC8F
+Fonts: Inter + Source Serif 4
+Feel: Clean, approachable, content-first with warm accent touches
+
+━━━ Variant B: "Bold Industrial" (🟡 Gemini) ━━━
+Colors: #0A0A0A, #FFFFFF, #FF6B35, #004E89, #1A936F
+Fonts: Space Grotesk + IBM Plex Sans
+Feel: High-contrast, technical authority, strong hierarchy
+
+━━━ Variant C: "Soft Gradient" (🔵 Claude) ━━━
+Colors: #667EEA, #764BA2, #F093FB, #F5F7FA, #1A202C
+Fonts: Satoshi + General Sans
+Feel: Modern, approachable, subtle depth through gradients
+```
+
+**Then ask the user to choose:**
+```javascript
+AskUserQuestion({
+  questions: [{
+    question: "Which design direction do you prefer?",
+    header: "Pick",
+    multiSelect: false,
+    options: [
+      {label: "Variant A", description: "[style name] — [one-line feel]"},
+      {label: "Variant B", description: "[style name] — [one-line feel]"},
+      {label: "Variant C", description: "[style name] — [one-line feel]"},
+      {label: "Mix & match", description: "Take elements from multiple variants"}
+    ]
+  }]
+})
+```
+
+**After selection, proceed to Step 5 using the chosen variant as the design direction.** If "Mix & match", ask which elements to combine before proceeding.
+
+---
+
 ### STEP 5: Phase 2 — Define (Design Direction)
 
-Synthesize search results into a design direction document:
+Synthesize search results (and chosen variant if shotgun mode) into a design direction document:
 
 1. **Style recommendation** — which visual style best fits the product (cite search results)
 2. **Color palette** — selected palette with hex values and contrast ratios
@@ -187,8 +274,15 @@ For each issue found, state: what's wrong, why it matters, and what to do instea
 
 ```bash
 # Check provider availability
-codex_available=$(command -v codex &> /dev/null && echo "true" || echo "false")
-gemini_available=$(command -v gemini &> /dev/null && echo "true" || echo "false")
+codex_available="false"
+if command -v codex >/dev/null 2>&1; then
+    codex_available="true"
+fi
+
+gemini_available="false"
+if command -v gemini >/dev/null 2>&1; then
+    gemini_available="true"
+fi
 
 # 🔴 Codex — implementation-focused critique (font loading, CSS practicality, bundle impact)
 if [[ "$codex_available" == "true" ]]; then

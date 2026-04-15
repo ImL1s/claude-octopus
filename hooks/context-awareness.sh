@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Claude Octopus — Context Awareness Hook (v9.6.0)
+# Claude Octopus — Context Awareness Hook (v9.19.0)
 # PostToolUse hook that warns when context window usage is high.
 # Reads bridge file written by statusline hooks and emits warnings
 # at 65% (WARNING), 75% (CRITICAL), and 80% (AUTO_COMPACT) thresholds.
 #
-# v9.6.0: Workflow-aware messages with phase-specific advice.
+# v9.19.0: RTK-aware optimization nudges at all severity levels.
+#           When RTK is installed, shows gain stats. When not, suggests install.
+#           RTK tip shown at WARNING and CRITICAL (not just WARNING).
+# v9.6.0:  Workflow-aware messages with phase-specific advice.
 # Debounced: fires every 5 tool calls to avoid flooding.
 # Severity escalation bypasses debounce.
 #
@@ -107,16 +110,36 @@ else
     ADVICE="Be concise in responses and avoid reading large files unnecessarily."
 fi
 
+# v9.19.0: RTK-aware optimization nudges
+RTK_TIP=""
+if command -v rtk &>/dev/null; then
+    # RTK installed — show gain stats at CRITICAL+ to remind of savings
+    if [[ "$SEVERITY" == "CRITICAL" || "$SEVERITY" == "AUTO_COMPACT" ]]; then
+        RTK_SAVED=""
+        if command -v python3 &>/dev/null; then
+            RTK_SAVED=$(rtk gain --json 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); s=d.get('summary',d); print(s.get('total_saved',''))" 2>/dev/null) || RTK_SAVED=""
+        fi
+        if [[ -n "$RTK_SAVED" && "$RTK_SAVED" != "0" ]]; then
+            RTK_TIP=" RTK active (${RTK_SAVED} tokens saved). Use Read/Grep tools instead of bash cat/grep to save more."
+        fi
+    fi
+else
+    # RTK not installed — suggest at WARNING, CRITICAL, and AUTO_COMPACT
+    if [[ "$SEVERITY" == "WARNING" || "$SEVERITY" == "CRITICAL" || "$SEVERITY" == "AUTO_COMPACT" ]]; then
+        RTK_TIP=" Tip: brew install rtk && rtk init -g (60-90% token savings). /octo:doctor to install."
+    fi
+fi
+
 case "$SEVERITY" in
     AUTO_COMPACT)
-        MSG="🐙 AUTO-COMPACT IMMINENT: Context at ${USED_PCT}% (${REMAINING}% remaining). Auto-compaction will fire soon — complete your current thought. Do NOT start new large operations. ${ADVICE}" ;;
+        MSG="ctx ${USED_PCT}% — auto-compact imminent, finish current thought. ${ADVICE}${RTK_TIP}" ;;
     CRITICAL)
-        MSG="🐙 CRITICAL: Context at ${USED_PCT}% (${REMAINING}% remaining). ${ADVICE}" ;;
+        MSG="ctx ${USED_PCT}% critical. ${ADVICE}${RTK_TIP}" ;;
     WARNING)
-        MSG="🐙 WARNING: Context at ${USED_PCT}% (${REMAINING}% remaining). ${ADVICE}" ;;
+        MSG="ctx ${USED_PCT}% warning. ${ADVICE}${RTK_TIP}" ;;
 esac
 
 # Return hook response with context warning
 cat <<EOF
-{"decision":"continue","additionalContext":"[Octopus Context Monitor] ${MSG}"}
+{"decision":"continue","additionalContext":"[🐙] ${MSG}"}
 EOF

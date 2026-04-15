@@ -48,7 +48,16 @@ Providers:
 - 🐙 Debate - Multi-AI deliberation
 - 🐙 Embrace - Full 4-phase workflow
 
-### Examples
+### Compact Mode
+
+When `OCTOPUS_COMPACT_BANNERS=true` is set, use a condensed single-line banner instead:
+```
+🐙 Discover — Multi-provider research | 🔴🟡🔵
+```
+
+This is preferred for repeat users who don't need the full provider block every time.
+
+### Examples (Standard Mode)
 
 **Research workflow:**
 ```
@@ -198,6 +207,11 @@ Before running workflows, check provider availability:
 - Codex CLI: `command -v codex` or check for OPENAI_API_KEY
 - Gemini CLI: `command -v gemini` or check for GEMINI_API_KEY
 - Perplexity: check for PERPLEXITY_API_KEY (API-only, no CLI needed)
+- OpenRouter: check for OPENROUTER_API_KEY
+- Ollama: `command -v ollama` + server health at http://localhost:11434
+- Copilot CLI: `command -v copilot` + auth (COPILOT_GITHUB_TOKEN or gh CLI)
+- Qwen CLI: `command -v qwen` + auth (~/.qwen/oauth_creds.json or QWEN_API_KEY)
+- OpenCode CLI: `command -v opencode` + auth (`opencode auth list` exit code)
 
 If a provider is unavailable, note it in the banner:
 ```
@@ -218,6 +232,7 @@ Always be mindful that external CLIs cost money:
 - 🔵 Claude (Sonnet 4.6): Included with Claude Code subscription
 - 🔵 Claude (Opus 4.6): $5/$25 per MTok input/output when using `claude-opus` agent type
 - 🔵 Claude (Opus 4.6 Fast): **$30/$150 per MTok** (6x standard) - lower latency, extra-usage billing (v2.1.36+)
+- 🟤 OpenCode: Variable cost — free for native models, uses backend provider pricing when routing to OpenAI/Google
 
 Note: Some OpenAI models (o-series reasoning, gpt-4.1, gpt-5.4-pro) require API keys and are NOT available via ChatGPT subscription/OAuth auth.
 
@@ -252,106 +267,13 @@ This enables faster workflow startup by skipping provider detection and preferen
 
 ---
 
-## Enforcement Best Practices (Mandatory for Workflow Skills)
+## Enforcement Best Practices
 
-Skills that invoke orchestrate.sh MUST use the **Validation Gate Pattern** to ensure proper execution.
+Skills use the **Validation Gate Pattern** to ensure multi-LLM dispatch actually executes:
 
-### Required Pattern
+1. **Pre-check**: Run `check-providers.sh` to detect available providers before dispatch
+2. **Dispatch**: Call `orchestrate.sh probe-single` per provider via background Agent subagents
+3. **Validate**: After dispatch, verify synthesis files exist (`find ~/.claude-octopus/results/ -name "probe-synthesis-*" -mmin -10`)
+4. **Fail loud**: If no synthesis files found, report "VALIDATION FAILED — multi-LLM dispatch did not execute" instead of silently falling back to Claude-only
 
-1. **Add to frontmatter:**
-   ```yaml
-   execution_mode: enforced
-   pre_execution_contract:
-     - interactive_questions_answered
-     - visual_indicators_displayed
-   validation_gates:
-     - orchestrate_sh_executed
-     - synthesis_file_exists
-   ```
-
-2. **Add EXECUTION CONTRACT section** with:
-   - Blocking steps (numbered, mandatory)
-   - Explicit Bash tool calls (not just markdown examples)
-   - Validation gates that verify execution
-   - Clear prohibition statements (what NOT to do)
-
-3. **Use imperative language:**
-   - ✅ "You MUST execute..."
-   - ✅ "PROHIBITED from..."
-   - ✅ "CANNOT SKIP..."
-   - ❌ "You should execute..."
-   - ❌ "It's recommended to..."
-   - ❌ "Consider calling..."
-
-4. **Validate artifacts:**
-   - Check synthesis files exist and are recent
-   - Verify via filesystem checks, not assumptions
-   - Fail explicitly if validation doesn't pass
-
-### Example: skill-deep-research.md
-
-See `.claude/skills/skill-deep-research.md` for reference implementation of the Validation Gate Pattern.
-
-All future orchestrate.sh-based skills should follow this pattern.
-
----
-
-## Modular Configuration (Claude Code v2.1.20+)
-
-Claude Octopus uses a modular CLAUDE.md structure for better organization and context management.
-
-### Directory Structure
-
-```
-claude-octopus/
-├── CLAUDE.md                    # Main instructions (this file)
-├── config/
-│   ├── providers/
-│   │   ├── codex/CLAUDE.md     # Codex-specific instructions
-│   │   ├── gemini/CLAUDE.md    # Gemini-specific instructions
-│   │   └── claude/CLAUDE.md    # Claude-specific instructions
-│   └── workflows/CLAUDE.md      # Double Diamond methodology
-```
-
-### Loading Additional Context
-
-Use `--add-dir` flag to load specific configuration modules:
-
-**Load provider-specific context:**
-```bash
-claude --add-dir=config/providers/codex    # When working with Codex
-claude --add-dir=config/providers/gemini   # When working with Gemini
-```
-
-**Load workflow methodology:**
-```bash
-claude --add-dir=config/workflows  # Load Double Diamond instructions
-```
-
-**Load multiple modules:**
-```bash
-claude \
-  --add-dir=config/providers/codex \
-  --add-dir=config/providers/gemini \
-  --add-dir=config/workflows
-```
-
-### Benefits of Modular Configuration
-
-1. **Reduced Context Pollution** - Load only what's needed
-2. **Environment-Specific** - Different configs for different scenarios
-3. **Maintainability** - Update provider configs independently
-4. **Clarity** - Separate concerns (providers vs workflows vs core)
-
-### When to Load Each Module
-
-| Module | When to Load |
-|--------|--------------|
-| `providers/codex` | Working specifically with Codex CLI integration |
-| `providers/gemini` | Working specifically with Gemini CLI integration |
-| `providers/claude` | Understanding Claude's orchestrator role |
-| `workflows` | Learning about Double Diamond methodology |
-
-### Note
-
-The main `CLAUDE.md` (this file) contains essential visual indicators and workflow triggers that are **always loaded** by default.
+> Developer reference (modular config, E2E testing, enforcement patterns): see `docs/DEVELOPER.md`

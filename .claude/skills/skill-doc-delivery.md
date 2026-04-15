@@ -4,7 +4,7 @@ aliases:
   - docs
   - document-delivery
   - doc-delivery
-description: Convert markdown to DOCX, PPTX, XLSX office documents
+description: Convert markdown to DOCX, PPTX, XLSX, PDF office documents — use when you need exportable deliverables
 trigger: |
   AUTOMATICALLY ACTIVATE when user requests:
   - Export knowledge work to office formats (e.g., "export to Word", "create PowerPoint", "convert to DOCX")
@@ -20,6 +20,10 @@ trigger: |
   - Code-related document requests
   - General file conversions (use document-skills directly)
   - When document-skills plugin not installed
+paths:
+  - "**/docs/**"
+  - "**/*.md"
+  - "**/README*"
 ---
 
 # Document Delivery for Knowledge Workers

@@ -1,9 +1,10 @@
 ---
 name: skill-debate
+effort: high
 user-invocable: true
 aliases:
   - debate
-description: Structured four-way AI debates between Claude, Sonnet, Gemini, and Codex
+description: Structured four-way AI debates between Claude, Sonnet, Gemini, and Codex — use for critical decisions
 context: fork
 trigger: |
   AUTOMATICALLY ACTIVATE when user says:
@@ -40,9 +41,13 @@ Participants:
 🟡 Gemini CLI - Ecosystem and strategic perspective
 🟠 Sonnet 4.6 - Pragmatic implementer perspective
 🐙 Claude (Opus) - Moderator and synthesis
+🟢 Copilot CLI - GitHub-native perspective (if available)
+🟤 Qwen CLI - Alternative model perspective (if available)
 ```
 
-**This is NOT optional.** Users need to see which AI providers are active and understand they are being charged for external API calls (🔴 🟡). Sonnet (🟠) is included with Claude Code — no additional cost.
+**Core four always participate:** Codex (🔴), Gemini (🟡), Sonnet (🟠), and Claude/Opus (🐙). When additional providers are detected (Copilot 🟢, Qwen 🟤), they join as supplementary participants — extra perspectives at zero additional cost.
+
+**This is NOT optional.** Users need to see which AI providers are active. External API calls (🔴 🟡) use provider API keys. Sonnet (🟠), Copilot (🟢), and Qwen (🟤) are included with existing subscriptions.
 
 ---
 
@@ -261,15 +266,15 @@ When the user invokes `/debate`:
 
 ### Step 1: Check Provider Availability & Display Banner
 
-**CRITICAL: Check which AI providers are available and display the visual indicator banner:**
+**MANDATORY: You MUST use the Bash tool to run this provider check BEFORE displaying the banner. Do NOT skip it. Do NOT assume availability.**
 
-First, check availability:
 ```bash
-codex_available=$(command -v codex &> /dev/null && echo "✓" || echo "✗ Not installed")
-gemini_available=$(command -v gemini &> /dev/null && echo "✓" || echo "✗ Not installed")
+bash "${HOME}/.claude-octopus/plugin/scripts/helpers/check-providers.sh"
 ```
 
-Then immediately output the required visual indicator banner:
+**Use the ACTUAL results below. PROHIBITED: Showing only "🔵 Claude: Available ✓" without listing all providers.**
+
+Then display the banner with real provider status:
 ```
 🐙 **CLAUDE OCTOPUS ACTIVATED** - AI Debate Hub
 🐙 Debate: [Topic/question being debated]
@@ -345,14 +350,22 @@ AskUserQuestion({
 - If user selected "Independent evaluation": use `--mode blinded` (no cross-contamination)
 - Incorporate all other answers into the debate context.
 
-### Step 3: Parse Arguments
+### Step 3: Parse Arguments & Build Debate Fleet
 ```bash
 # Extract question and flags
 QUESTION="Should we use Redis or in-memory cache?"
 ROUNDS=3
 STYLE="thorough"
-ADVISORS="gemini,codex"
+
+# Dynamic advisor selection — use build-fleet.sh for model family diversity
+DEBATE_FLEET=$("${HOME}/.claude-octopus/plugin/scripts/helpers/build-fleet.sh" debate standard "${QUESTION}" 2>/dev/null)
+# Extract debater agent types (exclude claude-sonnet Moderator)
+ADVISORS=$(echo "$DEBATE_FLEET" | grep '|Debater|' | cut -d'|' -f1 | paste -sd',' -)
+# Fallback if build-fleet.sh unavailable
+[[ -z "$ADVISORS" ]] && ADVISORS="gemini,codex"
 ```
+
+**The `build-fleet.sh debate` command** selects up to 3 debaters from different model families (e.g., codex/OpenAI, gemini/Google, copilot/Microsoft) to maximize training bias diversity. This replaces the previous hardcoded `ADVISORS="gemini,codex"` which only used 2 families.
 
 ### Step 4: Setup Debate Folder
 ```bash
@@ -637,6 +650,35 @@ Knowledge mode "deliberate" phase → Run /debate to get multiple perspectives
 ```
 
 ---
+
+## Quality Gates for Responses
+
+Each advisor response is scored before proceeding:
+
+| Metric | Weight | Criteria |
+|--------|--------|----------|
+| Length | 25 pts | 50-1000 words (substantive but concise) |
+| Citations | 25 pts | References, links, or sources present |
+| Code Examples | 25 pts | Technical examples or code snippets |
+| Engagement | 25 pts | Addresses other advisors' specific points |
+
+Score >= 75: proceed. Score 50-74: proceed with warning. Score < 50: re-prompt for elaboration.
+
+## Cost Tracking
+
+Typical costs (default word limits):
+- Quick (1 round): $0.02 - $0.05
+- Thorough (3 rounds): $0.10 - $0.20
+- Adversarial (5 rounds): $0.25 - $0.50
+
+Cost tracking integrates with `~/.claude-octopus/analytics/` logs.
+
+## Export
+
+After debate completes, export results via document-delivery skill:
+- PPTX: stakeholder presentations from synthesis
+- DOCX: detailed documentation from full transcript
+- PDF: archival with metadata (topic, participants, cost)
 
 ## Attribution
 

@@ -1,6 +1,7 @@
 ---
 name: academic-writer
 description: Expert academic writer specializing in research papers, grant proposals, abstracts, and scholarly communication. Masters academic writing conventions, peer review preparation, and research dissemination. Use PROACTIVELY for paper drafting, grant writing, or academic communication.
+maxTurns: 15
 model: sonnet
 memory: user
 when_to_use: |

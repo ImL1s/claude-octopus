@@ -1,5 +1,5 @@
 ---
-description: "Definition phase - Clarify and scope problems with multi-AI consensus"
+description: "\"Definition phase - Clarify and scope problems with multi-AI consensus\""
 ---
 
 # Define - Definition Phase 🎯
@@ -10,6 +10,16 @@ description: "Definition phase - Clarify and scope problems with multi-AI consen
 
 **When the user explicitly invokes `/octo:define`, you MUST execute the structured workflow below.** You are PROHIBITED from doing the task directly, skipping the definition/scoping phase, or deciding the task is "too simple" for this workflow. The user chose this command deliberately — respect that choice.
 
+### EXECUTION MECHANISM — NON-NEGOTIABLE
+
+**You MUST execute this command by invoking the corresponding skill via the Skill tool. You are PROHIBITED from:**
+- ❌ Using the Agent tool to research/implement yourself instead of invoking the skill
+- ❌ Using WebFetch/Read/Grep as a substitute for multi-provider dispatch
+- ❌ Skipping `orchestrate.sh` calls because "I can do this faster directly"
+- ❌ Implementing the task using only Claude-native tools (Agent, Write, Edit)
+
+**Multi-LLM orchestration is the purpose of this command.** If you execute using only Claude, you've violated the command's contract.
+
 ---
 
 When the user invokes this command (e.g., `/octo:define <arguments>`):
@@ -19,12 +29,11 @@ When the user invokes this command (e.g., `/octo:define <arguments>`):
 Skill(skill: "octo:define", args: "<user's arguments>")
 ```
 
-**✗ INCORRECT - Do NOT use Task tool:**
+**✗ INCORRECT:**
 ```
+Skill(skill: "flow-define", ...)  ❌ Wrong! Internal skill name, not resolvable by Skill tool
 Task(subagent_type: "octo:define", ...)  ❌ Wrong! This is a skill, not an agent type
 ```
-
-**Why:** This command loads the `flow-define` skill. Skills use the `Skill` tool, not `Task`.
 
 ### Post-Completion — Interactive Next Steps
 
@@ -51,7 +60,7 @@ AskUserQuestion({
 
 ---
 
-**Auto-loads the `flow-define` skill for the definition/scoping phase.**
+**Auto-loads the define skill for the definition/scoping phase.**
 
 ## Quick Usage
 

@@ -1,6 +1,9 @@
 ---
 name: debugger
 description: Debugging specialist for errors, test failures, and unexpected behavior. Use proactively when encountering any issues.
+effort: high
+maxTurns: 25
+initialPrompt: "Investigate the reported issue by examining stack traces, logs, and recent changes."
 model: sonnet
 memory: project
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Task(Bash)", "Task(Explore)"]

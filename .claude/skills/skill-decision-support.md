@@ -3,7 +3,7 @@ name: skill-decision-support
 aliases:
   - decision-support
   - options-presentation
-description: Present options with trade-offs for informed decision-making
+description: Present options with trade-offs for informed decision-making — use when choosing between approaches
 trigger: |
   AUTOMATICALLY ACTIVATE when user requests options or choices:
   - "fix or provide options" or "fix them or provide me options"

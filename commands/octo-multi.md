@@ -1,5 +1,5 @@
 ---
-description: Force multi-provider parallel execution for any task - manual override mode
+description: "Force multi-provider parallel execution for any task - manual override mode"
 ---
 
 # Multi - Multi-Provider Override
@@ -7,6 +7,15 @@ description: Force multi-provider parallel execution for any task - manual overr
 **Forces multi-provider execution for any task using all available AI providers.**
 
 ## 🤖 INSTRUCTIONS FOR CLAUDE
+
+### EXECUTION MECHANISM — NON-NEGOTIABLE
+
+**You MUST dispatch work to external providers (Codex, Gemini, etc.) for this command. You are PROHIBITED from:**
+- ❌ Executing the entire task using only Claude-native tools
+- ❌ Using a single Agent subagent instead of multi-provider dispatch
+- ❌ Skipping provider dispatch because "I can handle this alone"
+
+**Multi-LLM orchestration is the purpose of this command.** Single-model execution defeats its purpose.
 
 When the user invokes this command (e.g., `/octo:multi <task>`):
 
@@ -43,6 +52,8 @@ AskUserQuestion({
 })
 ```
 
+**WAIT for the user's answers before proceeding.**
+
 **After receiving answers:**
 
 - **If user selected "Tell me more about costs"**: Explain the cost breakdown, then ask question 2 again
@@ -68,6 +79,39 @@ if (!codexAvailable && !geminiAvailable) {
 ```
 
 Execute the task with all available providers, incorporating user intent from Step 1.
+
+### Step 3: Adversarial Synthesis (MANDATORY — do NOT skip)
+
+**After collecting responses from all providers, you MUST synthesize — not concatenate.**
+
+The whole point of multi-provider execution is diversity of opinion. Presenting provider responses back-to-back without synthesis defeats this purpose. You MUST produce a structured synthesis with these sections:
+
+1. **Consensus** — Where providers agree. State the shared conclusion and note how many providers converged on it.
+2. **Divergence** — Where providers disagree. Quote each provider's position verbatim so the user sees the actual disagreement, not a smoothed-over summary.
+3. **Resolution** — Your confidence-weighted recommendation resolving the conflicts. State your confidence level (high/medium/low) and WHY you side with one position over another. If you cannot resolve, say so — an honest "this depends on your context" is better than a false consensus.
+4. **Minority Opinions** — Dissenting views that may be valuable even if outnumbered. A single provider flagging a security risk or edge case that others missed is often the most valuable insight.
+
+**Present this synthesis in the chat using this format:**
+
+```markdown
+## Multi-Provider Synthesis
+
+### Consensus
+[Where all providers agree]
+
+### Divergence
+- 🔴 **Codex**: "[direct quote or close paraphrase]"
+- 🟡 **Gemini**: "[direct quote or close paraphrase]"
+- 🔵 **Claude**: "[direct quote or close paraphrase]"
+
+### Resolution
+[Your recommendation with confidence level and reasoning]
+
+### Minority Opinions
+[Dissenting views worth preserving — or "None: all providers converged"]
+```
+
+**Skip this step with `--fast` or when user explicitly requests speed over thoroughness.** In fast mode, present raw provider responses without synthesis.
 
 ---
 
@@ -183,4 +227,4 @@ Then you'll see results from each provider marked with their indicator (🔴 �
 - `/octo:debate` - Structured four-way debates (better for adversarial analysis)
 - `/octo:research` - Research workflow (auto-triggers multi-provider for research)
 - `/octo:review` - Review workflow (auto-triggers multi-provider for validation)
-- [COMMAND-REFERENCE.md](../../docs/COMMAND-REFERENCE.md#natural-language-triggers) - Activation rules and forced multi-provider guidance
+- [TRIGGERS.md](../../docs/TRIGGERS.md) - Full guide to what triggers multi-provider mode

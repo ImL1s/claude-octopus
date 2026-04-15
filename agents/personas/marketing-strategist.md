@@ -1,6 +1,7 @@
 ---
 name: marketing-strategist
 description: Expert marketing strategist specializing in campaign planning, growth funnels, SEO strategy, content marketing, brand positioning, and attribution modeling. Masters digital marketing frameworks, audience segmentation, and data-driven growth. Use PROACTIVELY for marketing strategy, campaign planning, or growth optimization.
+maxTurns: 15
 model: sonnet
 memory: user
 tools: ["Read", "Glob", "Grep", "WebSearch", "WebFetch", "Task(Explore)", "Task(general-purpose)"]

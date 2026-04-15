@@ -1,6 +1,6 @@
 ---
 name: skill-prd
-description: AI-optimized PRD creation with 100-point scoring framework
+description: Write an AI-optimized PRD using multi-AI orchestration — use when scoping a new feature or product
 context: fork
 agent: Plan
 ---
@@ -54,6 +54,23 @@ Structure:
 6. **Functional Requirements** - FR-001 format with acceptance criteria
 7. **Implementation Phases** - Dependency-ordered, time-boxed
 8. **Risks & Mitigations** - Top 3-5 risks with mitigation strategies
+
+---
+
+## PHASE 2.5: ADVERSARIAL PRD REVIEW (RECOMMENDED)
+
+**After drafting the PRD but BEFORE self-scoring, dispatch the draft to a second provider for adversarial review.** A single-model PRD has blind spots — cross-provider challenge surfaces wrong assumptions, uncovered scenarios, and contradictory requirements.
+
+Dispatch the PRD draft to a different provider (Codex, Gemini, or Sonnet as fallback) with this prompt:
+
+> "Challenge this PRD. What assumptions are wrong? What user scenarios are missing? What requirements contradict each other? What will the first user complaint be? What risk does this PRD ignore?"
+
+**After receiving the challenge:**
+- Revise the PRD to address valid challenges
+- Note dismissed challenges in the Risks section if they have partial merit
+- Add to PRD footer: `Adversarial review: applied`
+
+**Skip with `--fast` or when user requests speed over thoroughness.** See `prd.md` command for full dispatch syntax.
 
 ---
 

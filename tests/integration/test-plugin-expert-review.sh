@@ -327,8 +327,8 @@ test_marketplace_readiness() {
 
     # Check for assets
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
-    if [[ -d "$PROJECT_ROOT/assets" ]]; then
-        echo "  ✓ assets/ directory exists"
+    if [[ -d "$PROJECT_ROOT/assets" || -d "$PROJECT_ROOT/docs/assets" ]]; then
+        echo "  ✓ assets directory exists"
         PASSED_TESTS=$((PASSED_TESTS + 1))
     else
         echo "  ⚠ assets/ directory missing (recommended for marketplace)"

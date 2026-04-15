@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# octopus — CLI entry point for Claude Octopus plugin (v9.19.0)
+# Shipped as a plugin executable (CC v2.1.91+ bin/ directory support)
+#
+# Usage: octopus <command> [args...]
+#   octopus doctor     — Run diagnostics
+#   octopus version    — Show version
+#   octopus session    — Show current session info
+#   octopus fleet      — Show provider fleet status
+# ═══════════════════════════════════════════════════════════════════════════════
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ORCHESTRATE="${SCRIPT_DIR}/scripts/orchestrate.sh"
+
+case "${1:-help}" in
+    doctor)
+        shift
+        "$ORCHESTRATE" doctor "$@"
+        ;;
+    version)
+        if command -v jq &>/dev/null; then
+            jq -r '.version' "${SCRIPT_DIR}/.claude-plugin/plugin.json"
+        else
+            grep '"version"' "${SCRIPT_DIR}/.claude-plugin/plugin.json" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/'
+        fi
+        ;;
+    session)
+        shift
+        "$ORCHESTRATE" session-info "$@" 2>/dev/null || echo "No active session"
+        ;;
+    fleet)
+        shift
+        if [[ -x "${SCRIPT_DIR}/scripts/helpers/build-fleet.sh" ]]; then
+            "${SCRIPT_DIR}/scripts/helpers/build-fleet.sh" "$@"
+        else
+            echo "Fleet builder not available"
+        fi
+        ;;
+    help|--help|-h|*)
+        echo "octopus — Claude Octopus CLI"
+        echo ""
+        echo "Usage: octopus <command>"
+        echo ""
+        echo "Commands:"
+        echo "  doctor    Run diagnostics and health checks"
+        echo "  version   Show plugin version"
+        echo "  session   Show current session info"
+        echo "  fleet     Show provider fleet status"
+        echo "  help      Show this help"
+        ;;
+esac

@@ -5,41 +5,41 @@
   },
   "metadata": {
     "description": "Multi-tentacled orchestration plugin for Claude Code",
-    "version": "1.0.0"
+    "version": "9.22.0"
   },
   "plugins": [
     {
       "name": "octo",
       "source": "./",
-      "description": "v9.7.6 - Dependency installer for setup and doctor. Auto-detect + install missing CLIs, statusline, plugins. 3-tier adaptive HUD. 32 personas, 40 commands, 50 skills. Run /octo:setup.",
-      "version": "9.7.6",
+      "description": "v9.22.0 - Multi-LLM orchestration for Claude Code. Route tasks to Codex, Gemini, Perplexity, Copilot, Qwen, Ollama, OpenCode. 137 CC feature flags, token compression (~7K/session saved), interactive setup wizard. 32 personas, 48 commands, 51 skills. Run /octo:setup.",
+      "version": "9.22.0",
       "author": {
         "name": "nyldn"
       },
       "repository": "https://github.com/nyldn/claude-octopus",
+      "homepage": "https://github.com/nyldn/claude-octopus",
       "license": "MIT",
       "keywords": [
+        "multi-llm",
         "multi-agent",
         "orchestration",
+        "cowork",
         "double-diamond",
         "codex",
         "gemini",
+        "copilot",
+        "qwen",
+        "ollama",
+        "perplexity",
+        "openrouter",
         "multi-provider",
         "provider-routing",
-        "openrouter",
-        "crossfire",
         "adversarial-review",
-        "essential-tools",
-        "playwright",
-        "shellcheck",
-        "claude-code-2.1.16",
-        "session-aware",
-        "discipline-skills",
+        "claude-code-plugin",
         "tdd",
         "debugging",
-        "shortcuts",
-        "ux-improvement",
-        "categorized-commands"
+        "code-review",
+        "research"
       ],
       "category": "orchestration"
     }

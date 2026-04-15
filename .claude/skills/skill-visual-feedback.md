@@ -4,7 +4,7 @@ aliases:
   - visual-feedback
   - ui-ux-fixes
   - image-feedback
-description: Process screenshot-based UI/UX feedback to fix visual issues
+description: Process screenshot-based UI/UX feedback to fix visual issues — use when users share screenshots of bugs
 trigger: |
   AUTOMATICALLY ACTIVATE when user provides visual feedback:
   - "[Image X] The /settings should be Y"

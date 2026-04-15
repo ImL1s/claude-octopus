@@ -47,6 +47,8 @@ trigger: |
   - "what are my options" when asking for alternatives (use skill-decision-support)
 ---
 
+{{PREAMBLE}}
+
 ## Pre-Discovery: Project Initialization
 
 Before starting discovery:
@@ -61,11 +63,11 @@ Before starting discovery:
 # Check and initialize .octo/ state
 if [[ ! -d ".octo" ]]; then
   echo "📁 Initializing .octo/ project state..."
-  "${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" init_project
+  "${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" init_project
 fi
 
 # Update state for Discovery phase
-"${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_state \
+"${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_state \
   --phase 1 \
   --position "Discovery" \
   --status "in_progress"
@@ -132,12 +134,14 @@ Analyze the user's prompt and project to determine context:
 
 ### STEP 2: Display Visual Indicators (MANDATORY - BLOCKING)
 
-**Check provider availability:**
+**MANDATORY: You MUST use the Bash tool to run this provider check BEFORE displaying the banner. Do NOT skip it. Do NOT assume availability.**
 
 ```bash
-command -v codex &> /dev/null && codex_status="Available ✓" || codex_status="Not installed ✗"
-command -v gemini &> /dev/null && gemini_status="Available ✓" || gemini_status="Not installed ✗"
+bash "${HOME}/.claude-octopus/plugin/scripts/helpers/check-providers.sh"
 ```
+
+**Use the ACTUAL results below. PROHIBITED: Showing only "🔵 Claude: Available ✓" without listing all providers.**
+
 
 **Display this banner BEFORE orchestrate.sh execution:**
 
@@ -171,11 +175,6 @@ Provider Availability:
 ⏱️  Estimated Time: 2-5 minutes
 ```
 
-**Validation:**
-- If BOTH Codex and Gemini unavailable → STOP, suggest: `/octo:setup`
-- If ONE unavailable → Continue with available provider(s)
-- If BOTH available → Proceed normally
-
 **DO NOT PROCEED TO STEP 3 until banner displayed.** The banner shows users which providers will run and what costs they'll incur — starting API calls without this visibility violates cost transparency.
 
 ---
@@ -186,16 +185,16 @@ Provider Availability:
 
 ```bash
 # Initialize state if needed
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" init_state
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" init_state
 
 # Set current workflow
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" set_current_workflow "flow-discover" "discover"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" set_current_workflow "flow-discover" "discover"
 
 # Get prior decisions (if any)
-prior_decisions=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_decisions "all")
+prior_decisions=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_decisions "all")
 
 # Get context from previous phases
-prior_context=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" read_state | jq -r '.context')
+prior_context=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" read_state | jq -r '.context')
 
 # Display what you found (if any)
 if [[ "$prior_decisions" != "[]" && "$prior_decisions" != "null" ]]; then
@@ -218,29 +217,31 @@ fi
 
 **Parse the `intensity` parameter from the skill args.** The args string may start with `[intensity=quick|standard|deep]`. If no intensity is specified, default to `"standard"` (backward compatible with `/octo:embrace` which doesn't pass intensity).
 
-**Agent fleets by intensity:**
+**Build the fleet dynamically using `build-fleet.sh`** — this is the single source of truth for provider-to-perspective assignment. It detects ALL available providers (codex, gemini, copilot, qwen, opencode, ollama, perplexity, openrouter) and assigns perspectives with model family diversity enforcement.
 
-| Intensity | Count | Perspectives & Agent Types |
-|-----------|-------|----------------------------|
-| **Quick** | 2 | Codex: problem analysis, Gemini: ecosystem overview |
-| **Standard** | 4-5 | + Claude Sonnet: edge cases, Codex: feasibility, [Sonnet: codebase analysis if inside git repo] |
-| **Deep** | 6-7 | + Gemini: cross-synthesis, [Perplexity: web research if PERPLEXITY_API_KEY set] |
+```bash
+FLEET_OUTPUT=$("${HOME}/.claude-octopus/plugin/scripts/helpers/build-fleet.sh" research "${INTENSITY}" "${PROMPT}" 2>/dev/null)
+```
 
-**Build the perspective list as an array of objects, each with:**
-- `agent_type`: codex, gemini, claude-sonnet, or perplexity
-- `perspective`: the angle-specific prompt (same prompts as probe_discover() in orchestrate.sh)
-- `task_id`: `probe-<timestamp>-<index>`
-- `label`: human-readable name (e.g., "Problem Analysis", "Ecosystem Overview")
+The output is one line per agent: `agent_type|label|perspective_prompt`
 
-**Perspective prompts (use the user's research question as `$PROMPT`):**
+**Parse each line into the fleet array:**
+- `agent_type`: the provider to dispatch (codex, gemini, copilot, qwen, opencode, claude-sonnet, perplexity, etc.)
+- `label`: human-readable name (e.g., "Problem Analysis", "Ecosystem Overview", "Contrarian Analysis")
+- `perspective_prompt`: the angle-specific prompt to send to that provider
+- `task_id`: generate as `probe-<timestamp>-<index>` for each entry
 
-1. **Problem Analysis** (Codex): `"Analyze the problem space: $PROMPT. Focus on understanding constraints, requirements, and user needs."`
-2. **Ecosystem Overview** (Gemini): `"Research existing solutions and patterns for: $PROMPT. What has been done before? What worked, what failed?"`
-3. **Edge Cases** (Claude Sonnet): `"Explore edge cases and potential challenges for: $PROMPT. What could go wrong? What's often overlooked?"`
-4. **Feasibility** (Codex): `"Investigate technical feasibility and dependencies for: $PROMPT. What are the prerequisites?"`
-5. **Codebase Analysis** (Claude Sonnet, only if inside git repo with source files): `"Analyze the LOCAL CODEBASE in the current directory for: $PROMPT. Run: find . -type f -name '*.ts' -o -name '*.py' -o -name '*.js' | head -30, then read key files. Report: tech stack, architecture patterns, file structure, coding conventions, and how they relate to the prompt. Focus on ACTUAL code, not hypotheticals."`
-6. **Cross-Synthesis** (Gemini): `"Synthesize cross-cutting concerns for: $PROMPT. What themes emerge across problem space, solutions, and feasibility?"`
-7. **Web Research** (Perplexity, only if PERPLEXITY_API_KEY set): `"Search the live web for the latest information about: $PROMPT. Find recent articles, documentation, blog posts, GitHub repos, and community discussions. Include source URLs and publication dates. Focus on information from the last 12 months that may not be in training data."`
+**Fleet sizes by intensity:**
+
+| Intensity | Agents | Behavior |
+|-----------|--------|----------|
+| **Quick** | 2 | Two most diverse providers |
+| **Standard** | 4-5 | Rotates across available providers + Claude for edge cases and codebase analysis |
+| **Deep** | 6-10 | ALL available providers get unique perspectives (bonus slots for copilot, qwen, opencode, etc.) |
+
+**Model family diversity is enforced automatically** — the script prioritizes spreading agents across different model families (OpenAI, Google, Microsoft, Alibaba, Anthropic) to avoid agreement bias from same-family models.
+
+**DO NOT hardcode provider assignments.** Always use build-fleet.sh output. If the script is unavailable, fall back to the previous behavior (codex + gemini + claude-sonnet).
 
 **DO NOT PROCEED TO STEP 4 until the fleet is built.**
 
@@ -250,7 +251,7 @@ fi
 
 **Launch each perspective as a background Agent subagent.** Each agent calls `orchestrate.sh probe-single` which handles persona application, credential isolation, and result file writing.
 
-**CRITICAL: You MUST use the Agent tool with `run_in_background: true` for each perspective.** Launch Gemini agents first (higher latency), then Codex, then Claude Sonnet, then Perplexity.
+**CRITICAL: You MUST use the Agent tool with `run_in_background: true` for each perspective.** Launch external CLI agents first (higher latency — gemini, codex, copilot, qwen, opencode), then Claude Sonnet agents, then API-only agents (perplexity).
 
 For each perspective in the fleet, launch:
 
@@ -260,7 +261,7 @@ Agent(
   description: "<label> (<agent_type>)",
   prompt: "Run this command and return its COMPLETE stdout output, including the result file path on the last line:
 
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh probe-single <agent_type> '<perspective_prompt>' <task_id> '<original_prompt>'
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh probe-single <agent_type> '<perspective_prompt>' <task_id> '<original_prompt>'
 
 After the command completes, read the result file path that was printed and return the full file contents."
 )
@@ -281,9 +282,9 @@ After the command completes, read the result file path that was printed and retu
 **Wait for all background agents to complete.** You will be automatically notified as each finishes.
 
 **Minimum 2 results required** (same threshold as synthesize_probe_results()). Graceful degradation rules:
-- 0 results → Report error, show logs, DO NOT proceed
-- 1 result → Warn user, proceed with reduced synthesis quality
-- 2+ results → Proceed normally
+- 0 results -> Report error, show logs, DO NOT proceed
+- 1 result -> Warn user, proceed with reduced synthesis quality
+- 2+ results -> Proceed normally
 - If some agents fail/timeout, proceed with successful results
 
 **For each completed agent, collect its output** (the result file contents returned by the agent).
@@ -294,16 +295,20 @@ After the command completes, read the result file path that was printed and retu
 
 **You (Claude) synthesize the collected results directly in conversation.** This replaces the previous Gemini synthesis call that frequently timed out.
 
-**Use this exact structure** (matching the format from `synthesize_probe_results()` in orchestrate.sh):
+**Use this exact structure** (structured research report format):
 
-1. **Key Findings** — Top 3-5 actionable insights, ranked by relevance to the original question
-2. **Patterns & Consensus** — Where multiple sources agree
-3. **Conflicts & Trade-offs** — Where sources disagree, with your reasoned resolution
-4. **Gaps** — What's still unknown and needs more research
-5. **Priority Matrix** — Rank findings by impact (High/Medium/Low) and effort (Low/Medium/High) in a table
-6. **Recommended Approach** — Specific next steps based on findings
+1. **Executive Summary** — 2-3 sentence overview answering the original question directly
+2. **Key Findings** — Top 3-5 actionable insights, ranked by relevance to the original question
+3. **Themes & Patterns** — Where multiple sources agree, grouped by theme
+4. **Conflicts & Trade-offs** — Where sources disagree, with your reasoned resolution
+5. **Gaps** — What's still unknown and needs more research
+6. **Priority Matrix** — Rank findings by impact (High/Medium/Low) and effort (Low/Medium/High) in a table
+7. **Recommended Approach** — Specific next steps based on findings
+8. **Sources** — List each source with provider attribution and what it contributed
+9. **Methodology** — Brief note on providers used, intensity level, and research approach
 
 **Quality rules:**
+- Every claim MUST cite its source provider or be explicitly marked as `[inference]`
 - Short but specific findings may be MORE valuable than lengthy general analysis
 - Minority opinions and dissenting views MUST be preserved — they often contain critical insights
 - Concrete examples (code, file paths, commands) outweigh abstract discussion
@@ -338,11 +343,12 @@ echo "✅ VALIDATION PASSED: $SYNTHESIS_FILE"
 ```bash
 key_findings=$(head -50 "$SYNTHESIS_FILE" | grep -A 3 "## Key Findings\|## Summary" | tail -3 | tr '\n' ' ')
 
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_context "discover" "$key_findings"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "phases_completed" "1"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "codex"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "gemini"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "claude"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_context "discover" "$key_findings"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_metrics "phases_completed" "1"
+# Track actual providers used (dynamic — from fleet output, not hardcoded)
+for _provider in $(echo "$FLEET_OUTPUT" | cut -d'|' -f1 | sort -u); do
+  "${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_metrics "provider" "$_provider"
+done
 ```
 
 **Present results** formatted according to context (Dev vs Knowledge):
@@ -397,7 +403,7 @@ Analyze the user's prompt and project to determine context:
 **First, check task status (if available):**
 ```bash
 # Get task status summary from orchestrate.sh (v2.1.12+)
-task_status=$("${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh" get-task-status 2>/dev/null || echo "")
+task_status=$("${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh" get-task-status 2>/dev/null || echo "")
 ```
 
 **For Dev Context:**
@@ -425,7 +431,7 @@ Providers:
 🔵 Claude - Strategic synthesis
 ```
 
-**This is NOT optional.** Users need to see which AI providers are active and understand they are being charged for external API calls (🔴 🟡).
+{{VISUAL_INDICATORS}}
 
 ---
 
@@ -502,7 +508,7 @@ Providers:
 ### Step 1: Invoke Discover Phase
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh discover "<user's research question>"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh discover "<user's research question>"
 ```
 
 ### Step 2: Multi-Provider Research
@@ -621,7 +627,7 @@ After successful execution, present findings formatted for context:
    ## Next Steps
    [Technical action items]
    ```
-   
+
    **For Knowledge Context:**
    ```
    # Strategic Research: <question>
@@ -662,7 +668,7 @@ Claude:
 🐙 **CLAUDE OCTOPUS ACTIVATED** - Multi-provider research mode
 🔍 Discover Phase: Researching OAuth 2.0 patterns
 
-[Executes: ${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh probe "OAuth 2.0 authentication patterns for React apps"]
+[Executes: ${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh probe "OAuth 2.0 authentication patterns for React apps"]
 
 [After completion, reads synthesis and presents:]
 
@@ -772,7 +778,7 @@ When discover workflow fetches external URLs (documentation, articles, etc.), **
    validate_external_url "$url" || { echo "Invalid URL"; return 1; }
    ```
 
-2. **Transform social media URLs** (Twitter/X → FxTwitter API):
+2. **Transform social media URLs** (Twitter/X -> FxTwitter API):
    ```bash
    url=$(transform_twitter_url "$url")
    ```
@@ -825,14 +831,14 @@ After discovery completes:
 
 ```bash
 # Update state after Discovery completion
-"${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_state \
+"${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_state \
   --status "complete" \
   --history "Discover phase completed"
 
 # Populate PROJECT.md with research findings
 if [[ -f "$SYNTHESIS_FILE" ]]; then
   echo "📝 Updating .octo/PROJECT.md with discovery findings..."
-  "${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_project \
+  "${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_project \
     --section "vision" \
     --content "$(head -100 "$SYNTHESIS_FILE" | grep -A 10 'Key.*Findings\|Summary' || echo 'See synthesis file')"
 fi

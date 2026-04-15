@@ -1,10 +1,12 @@
 ---
 name: skill-finish-branch
 version: 1.0.0
-description: Post-implementation: verify tests, merge/PR/keep/discard. Use when: AUTOMATICALLY ACTIVATE when user requests task completion with git operations:. "commit and push" or "git commit and push". "complete all tasks and commit and push"
+description: "Wrap up a branch — run tests, create PR, merge or discard — use when implementation is done. Use when: AUTOMATICALLY ACTIVATE when user requests task completion with git operations:. \"commit and push\" or \"git commit and push\". \"complete all tasks and commit and push\""
 ---
 
 # Finishing a Development Branch
+
+**Your first output line MUST be:** `🐙 **CLAUDE OCTOPUS ACTIVATED** - Branch Completion`
 
 ## Overview
 
@@ -259,7 +261,7 @@ After completing octopus workflows, use this skill:
 
 ```bash
 # Run octopus validation before finishing
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh ink "Validate before merge"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh ink "Validate before merge"
 
 # If validation passes, proceed with finishing-branch
 ```

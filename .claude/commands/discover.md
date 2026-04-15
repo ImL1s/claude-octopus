@@ -14,6 +14,16 @@ aliases:
 
 **When the user explicitly invokes `/octo:discover`, you MUST execute the structured workflow below.** You are PROHIBITED from doing the task directly, skipping the multi-provider research phase, or deciding the task is "too simple" for this workflow. The user chose this command deliberately — respect that choice.
 
+### EXECUTION MECHANISM — NON-NEGOTIABLE
+
+**You MUST execute this command by invoking the corresponding skill via the Skill tool. You are PROHIBITED from:**
+- ❌ Using the Agent tool to research/implement yourself instead of invoking the skill
+- ❌ Using WebFetch/Read/Grep as a substitute for multi-provider dispatch
+- ❌ Skipping `orchestrate.sh` calls because "I can do this faster directly"
+- ❌ Implementing the task using only Claude-native tools (Agent, Write, Edit)
+
+**Multi-LLM orchestration is the purpose of this command.** If you execute using only Claude, you've violated the command's contract.
+
 ---
 
 When the user invokes this command (e.g., `/octo:discover <arguments>`):

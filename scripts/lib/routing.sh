@@ -651,3 +651,47 @@ get_role_for_context() {
             ;;
     esac
 }
+
+# ── Extracted from orchestrate.sh ──
+load_routing_rules() {
+    local rules_file="${WORKSPACE_DIR}/.octo/routing-rules.json"
+
+    if [[ ! -f "$rules_file" ]]; then
+        return 1
+    fi
+
+    if ! command -v jq &>/dev/null; then
+        log WARN "jq required for routing rules, skipping"
+        return 1
+    fi
+
+    cat "$rules_file"
+}
+
+
+create_default_routing_rules() {
+    local rules_file="${WORKSPACE_DIR}/.octo/routing-rules.json"
+
+    # Don't overwrite existing
+    if [[ -f "$rules_file" ]]; then
+        return 0
+    fi
+
+    mkdir -p "$(dirname "$rules_file")"
+
+    cat > "$rules_file" << 'ROUTINGEOF'
+{
+  "rules": [
+    {"match": {"task_type": "security"}, "prefer": "security-auditor", "fallback": "code-reviewer"},
+    {"match": {"keywords": "security vulnerability audit"}, "prefer": "security-auditor", "fallback": "code-reviewer"},
+    {"match": {"keywords": "performance optimize bottleneck"}, "prefer": "performance-engineer", "fallback": "backend-architect"},
+    {"match": {"keywords": "test testing tdd"}, "prefer": "tdd-orchestrator", "fallback": "test-automator"},
+    {"match": {"keywords": "database schema migration"}, "prefer": "database-architect", "fallback": "backend-architect"},
+    {"match": {"keywords": "deploy ci cd pipeline"}, "prefer": "deployment-engineer", "fallback": "cloud-architect"},
+    {"match": {"keywords": "frontend react component"}, "prefer": "frontend-developer", "fallback": "typescript-pro"}
+  ]
+}
+ROUTINGEOF
+
+    log INFO "Created default routing rules: $rules_file"
+}

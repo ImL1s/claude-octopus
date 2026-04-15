@@ -10,6 +10,8 @@ updated: 2026-02-21
 
 # Sentinel (/octo:sentinel)
 
+**Your first output line MUST be:** `🐙 Octopus Sentinel`
+
 GitHub-aware work monitor that triages issues, PRs, and CI failures. Sentinel observes and recommends workflows but never auto-executes them.
 
 ## Usage
@@ -64,7 +66,7 @@ OCTOPUS_SENTINEL_ENABLED=true bash scripts/orchestrate.sh sentinel $ARGUMENTS
 After triage, run the reaction engine to auto-respond to detected events:
 ```bash
 # Check all active agents and fire reactions
-REACTIONS="${CLAUDE_PLUGIN_ROOT:-}/scripts/reactions.sh"
+REACTIONS="${HOME}/.claude-octopus/plugin/scripts/reactions.sh"
 if [[ -x "$REACTIONS" ]]; then
   "$REACTIONS" check-all
 fi

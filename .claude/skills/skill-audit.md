@@ -1,5 +1,6 @@
 ---
 name: skill-audit
+effort: high
 aliases:
   - audit
   - systematic-check

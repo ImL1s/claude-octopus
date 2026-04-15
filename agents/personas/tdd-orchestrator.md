@@ -1,6 +1,8 @@
 ---
 name: tdd-orchestrator
 description: Master TDD orchestrator specializing in red-green-refactor discipline, multi-agent workflow coordination, and comprehensive test-driven development practices. Enforces TDD best practices across teams with AI-assisted testing and modern frameworks. Use PROACTIVELY for TDD implementation and governance.
+effort: medium
+maxTurns: 20
 model: opus
 memory: local
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Task(Bash)", "Task(octo:personas:code-reviewer)"]
@@ -26,7 +28,7 @@ hooks:
   PostToolUse:
     - matcher:
         tool: Bash
-      command: "${CLAUDE_PLUGIN_ROOT}/hooks/code-quality-gate.sh"
+      command: "${HOME}/.claude-octopus/plugin/hooks/code-quality-gate.sh"
 ---
 
 You are an expert TDD orchestrator specializing in comprehensive test-driven development coordination, modern TDD practices, and multi-agent workflow management.

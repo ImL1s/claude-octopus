@@ -96,6 +96,7 @@ Create `.vscode/mcp.json` in your project:
       "command": "npx",
       "args": ["tsx", "/path/to/claude-octopus/mcp-server/src/index.ts"],
       "env": {
+        "OCTO_CLAW_ENABLED": "true",
         "OPENAI_API_KEY": "${env:OPENAI_API_KEY}",
         "GEMINI_API_KEY": "${env:GEMINI_API_KEY}"
       }
@@ -106,15 +107,37 @@ Create `.vscode/mcp.json` in your project:
 
 ### Cursor
 
-Create `.cursor/mcp.json` in your project:
+> **Important:** Cursor does **not** have Claude Code's plugin/slash-command system. You will not get `/octo:*` commands. Instead, Octopus runs as an MCP server exposing tools like `octopus_discover`, `octopus_review`, etc. that you invoke through Cursor's AI chat.
+
+**What works in Cursor:**
+- All MCP tools (research, review, debate, security audit, etc.)
+- Multi-provider dispatch (Codex + Gemini + Claude via the MCP server)
+- Editor context injection via `octopus_set_editor_context`
+
+**What doesn't work in Cursor:**
+- `/octo:*` slash commands (Claude Code plugin feature only)
+- Hooks, statusline HUD, and session state (require Claude Code's plugin runtime)
+- Discipline mode auto-invoke gates (require Claude Code hooks)
+
+**Option 1: Auto-setup (recommended)**
+
+```bash
+git clone --depth 1 https://github.com/nyldn/claude-octopus.git ~/.cursor/claude-octopus
+cd ~/.cursor/claude-octopus && scripts/ide-attach.sh --ide cursor
+```
+
+**Option 2: Manual config**
+
+Create `.cursor/mcp.json` in your project (per-project) or `~/.cursor/mcp.json` (global):
 
 ```json
 {
   "mcpServers": {
     "claude-octopus": {
       "command": "npx",
-      "args": ["tsx", "/path/to/claude-octopus/mcp-server/src/index.ts"],
+      "args": ["tsx", "${userHome}/.cursor/claude-octopus/mcp-server/src/index.ts"],
       "env": {
+        "OCTO_CLAW_ENABLED": "true",
         "OPENAI_API_KEY": "${env:OPENAI_API_KEY}",
         "GEMINI_API_KEY": "${env:GEMINI_API_KEY}"
       }
@@ -122,6 +145,12 @@ Create `.cursor/mcp.json` in your project:
   }
 }
 ```
+
+Restart Cursor after setup. Tools appear in Settings → Tools & MCP.
+
+**Using Octopus in Cursor:** Ask naturally in Cursor's AI chat — e.g. "use octopus_discover to research OAuth patterns" or "run octopus_review on this PR". Cursor's agent will invoke the MCP tools automatically.
+
+**Cursor Rules (optional):** To customize Octopus behavior, you can add a `.cursor/rules/octopus.md` file with project-specific instructions. This is similar to how `CLAUDE.md` works in Claude Code — it gives the AI context about your project conventions. See [Cursor Rules docs](https://cursor.com/docs/context/rules) for details.
 
 ### Zed
 

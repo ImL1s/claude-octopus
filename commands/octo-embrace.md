@@ -4,29 +4,34 @@ description: "Full Double Diamond workflow - Research → Define → Develop →
 
 # Embrace - Complete Double Diamond Workflow
 
-## 🤖 INSTRUCTIONS FOR CLAUDE
+**Your first output line MUST be:** `🐙 Octopus Embrace`
 
-### MANDATORY COMPLIANCE — DO NOT SKIP
+## MANDATORY COMPLIANCE — DO NOT SKIP
 
-**When the user explicitly invokes `/octo:embrace`, you MUST execute the full workflow below. You are PROHIBITED from:**
+**When the user invokes `/octo:embrace`, you MUST execute the full multi-LLM workflow below. You are PROHIBITED from:**
 - Deciding the task is "too simple" for the workflow
 - Doing the task directly instead of running the phases
 - Skipping phases because you judge them unnecessary
 - Substituting your own approach for the structured workflow
 
-**The user chose `/octo:embrace` deliberately.** Respect that choice. Even for seemingly simple tasks, the workflow adds multi-provider research, structured definition, quality gates, and validation that the user wants. If the task truly doesn't benefit from the workflow, the user will tell you — do not make that judgment yourself.
+**The user chose `/octo:embrace` deliberately.** Respect that choice.
 
-**If you catch yourself thinking "this is straightforward, I'll just do it directly" — STOP. That is exactly the behavior this instruction prohibits.**
+## EXECUTION MECHANISM — NON-NEGOTIABLE
+
+**Each phase MUST be executed by invoking the corresponding skill using the Skill tool. You are PROHIBITED from:**
+- Using the Agent tool to do research yourself instead of invoking `/octo:discover`
+- Using WebFetch/Read/Grep as a substitute for multi-provider research
+- Implementing code directly instead of invoking `/octo:develop`
+- Using a single code-reviewer agent instead of invoking `/octo:deliver`
+- Skipping `orchestrate.sh` calls because "I can do this faster directly"
+
+**The ENTIRE POINT of `/octo:embrace` is multi-LLM orchestration.** If you execute phases using only Claude-native tools (Agent, WebFetch, Write, Edit), you have violated the command's purpose even if you followed the phase structure.
+
+**Self-check after completion:** You should be able to list the Skill invocations and orchestrate.sh commands you ran. If you used only Claude-native tools, you executed incorrectly.
 
 ---
 
-When the user invokes this command (e.g., `/octo:embrace <arguments>`):
-
-### Step 1: Ask Clarifying Questions
-
-**CRITICAL: Before starting the embrace workflow, use the AskUserQuestion tool to gather context:**
-
-Ask 3 clarifying questions to ensure high-quality workflow execution:
+## Step 1: Ask Clarifying Questions
 
 ```javascript
 AskUserQuestion({
@@ -65,241 +70,179 @@ AskUserQuestion({
       ]
     },
     {
-      question: "Should critical decisions be stress-tested with a Multi-LLM debate? (Claude + Codex + Gemini deliberate together)",
+      question: "Should critical decisions be stress-tested with a Multi-LLM debate?",
       header: "Multi-LLM Debate Gates",
       multiSelect: false,
       options: [
-        {label: "Yes — Multi-LLM debate at Define→Develop gate", description: "Claude, Codex, and Gemini debate the chosen approach before implementing (recommended for Large/Full scope)"},
-        {label: "Yes — Multi-LLM debate at both gates", description: "Three-model debate after Define AND before Deliver (maximum rigor, uses external API credits)"},
-        {label: "No — skip Multi-LLM debates", description: "Standard workflow without multi-model debate checkpoints"},
-        {label: "Only if disagreement detected", description: "Auto-trigger Multi-LLM debate when providers show significant divergence"}
+        {label: "Yes — debate at Define→Develop gate", description: "Recommended for Large/Full scope"},
+        {label: "Yes — debate at both gates", description: "Maximum rigor, uses external API credits"},
+        {label: "No — skip debates", description: "Standard workflow without debate checkpoints"},
+        {label: "Only if disagreement detected", description: "Auto-trigger when providers diverge"}
       ]
     }
   ]
 })
 ```
 
-**After receiving answers:**
-- Store the context for use across all 4 phases
-- Set autonomy mode based on user preference
-- Store debate gate preference for phase transitions
-- Proceed with the embrace workflow incorporating this context
+Store context (scope, focus, autonomy, debate preference) for all phases.
 
-### Step 2: Check Provider Availability & Display Banner
+## Step 2: Check Provider Availability & Display Banner
 
-**Check which AI providers are available and display the visual indicator banner:**
+**MANDATORY: Run this bash command BEFORE the banner.**
 
-First, check availability:
 ```bash
-codex_available=$(command -v codex &> /dev/null && echo "✓" || echo "✗ Not installed")
-gemini_available=$(command -v gemini &> /dev/null && echo "✓" || echo "✗ Not installed")
+echo "PROVIDER_CHECK_START"
+printf "codex:%s\n" "$(command -v codex >/dev/null 2>&1 && echo available || echo missing)"
+printf "gemini:%s\n" "$(command -v gemini >/dev/null 2>&1 && echo available || echo missing)"
+printf "perplexity:%s\n" "$([ -n "${PERPLEXITY_API_KEY:-}" ] && echo available || echo missing)"
+printf "opencode:%s\n" "$(command -v opencode >/dev/null 2>&1 && echo available || echo missing)"
+printf "copilot:%s\n" "$(command -v copilot >/dev/null 2>&1 && echo available || echo missing)"
+printf "qwen:%s\n" "$(command -v qwen >/dev/null 2>&1 && echo available || echo missing)"
+printf "ollama:%s\n" "$(command -v ollama >/dev/null 2>&1 && curl -sf http://localhost:11434/api/tags >/dev/null 2>&1 && echo available || echo missing)"
+printf "openrouter:%s\n" "$([ -n "${OPENROUTER_API_KEY:-}" ] && echo available || echo missing)"
+echo "PROVIDER_CHECK_END"
 ```
 
-Then output the banner:
+Display banner with ACTUAL results:
+
 ```
 🐙 **CLAUDE OCTOPUS ACTIVATED** - Full Double Diamond Workflow
-🐙 Embrace: [Brief description of what's being built]
+🐙 Embrace: [Brief description]
 
-All Phases:
-🔍 Discover - Multi-provider research
-🎯 Define - Consensus building
-🛠️ Develop - Implementation with quality gates
-✅ Deliver - Final validation and review
+Phases: 🔍 Discover → 🎯 Define → 🛠️ Develop → ✅ Deliver
 
 Provider Availability:
-🔴 Codex CLI: [Available ✓ / Not installed ✗]
-🟡 Gemini CLI: [Available ✓ / Not installed ✗]
-🟣 Perplexity: [Available ✓ / Not configured ✗]
+🔴 Codex CLI: [status]    🟡 Gemini CLI: [status]
+🟣 Perplexity: [status]   🟤 OpenCode: [status]
 🔵 Claude: Available ✓
 
-Project Context:
-Scope: [User's scope answer]
-Focus: [User's focus areas]
-Autonomy: [User's autonomy preference]
+Scope: [answer]  Focus: [answer]  Autonomy: [answer]
 ```
 
-**If providers are missing:**
-- Note in the banner which providers are unavailable
-- Suggest running `/octo:setup` to configure missing providers
-- Proceed with available providers only
+## Step 3: Execute Phases via Skill Invocations
 
-### Step 3: Execute Workflow
+**CRITICAL: Each phase MUST be invoked as a separate skill. This ensures each phase's full enforcement instructions (including orchestrate.sh dispatch) load fresh into context.**
 
-**Run orchestrate.sh with the embrace command:**
+### Phase 1 — Discover
 
-Use the Bash tool to execute:
-```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh embrace "<user's prompt>"
+Invoke the discover skill:
+```
+Skill(skill: "octo:discover", args: "<user's prompt>")
 ```
 
-**What happens:**
-1. **Probe Phase** - Multi-provider research via spawn_agent() calls to Codex/Gemini
-2. **Grasp Phase** - Consensus building with run_agent_sync()
-3. **🐙 Define→Develop Debate Gate** (if enabled) — see Step 3b
-4. **Tangle Phase** - Implementation with quality gates
-5. **🐙 Develop→Deliver Debate Gate** (if "both gates" selected) — see Step 3c
-6. **Ink Phase** - Final validation and delivery
+This will dispatch to Codex, Gemini, and other available providers via `orchestrate.sh probe-single`. Results saved to `~/.claude-octopus/results/probe-synthesis-*.md`.
 
-**Autonomy handling:**
-- Supervised mode: Pauses after each phase for approval
-- Semi-autonomous: Auto-proceeds unless quality gate fails
-- Autonomous: Runs all 4 phases without intervention
+**Supervised mode:** After Discover completes, present key findings and ask to proceed.
+**Semi-autonomous/Autonomous:** Proceed automatically.
 
-**Results saved to:**
-- `~/.claude-octopus/results/probe-synthesis-<timestamp>.md`
-- `~/.claude-octopus/results/grasp-consensus-<timestamp>.md`
-- `~/.claude-octopus/results/tangle-validation-<timestamp>.md`
-- `~/.claude-octopus/results/delivery-<timestamp>.md`
+### Phase 2 — Define
 
-### Step 3b: Define→Develop Debate Gate
-
-**When the user selected debate gates ("at Define→Develop gate", "at both gates", or "only if disagreement detected"):**
-
-After the Grasp (Define) phase completes and before Tangle (Develop) begins:
-
-1. **Read the grasp consensus** from `~/.claude-octopus/results/grasp-consensus-*.md`
-2. **Run a 1-round quick debate** challenging the chosen approach:
-
+Invoke the define skill:
 ```
-🐙 **DEBATE GATE** — Stress-testing the Define→Develop transition
-🐙 Question: "Given this consensus, what are the biggest risks if we proceed? What alternatives were dismissed too quickly?"
+Skill(skill: "octo:define", args: "<user's prompt>")
 ```
 
-Use the debate skill with these parameters:
-- `--rounds 1 --debate-style adversarial --max-words 200`
-- Pass the grasp consensus as `--context-file`
-- Each provider argues against the consensus to surface blind spots
+This builds consensus across providers via `orchestrate.sh`. Results saved to `~/.claude-octopus/results/grasp-consensus-*.md`.
 
-3. **Evaluate debate outcome:**
-   - If all providers agree the approach is sound → proceed to Develop
-   - If significant risks surface → present findings to user with AskUserQuestion:
+**Supervised mode:** Present consensus and ask to proceed.
 
+### Debate Gate (if enabled)
+
+If user selected debate gates at Define→Develop transition:
+1. Read consensus from `~/.claude-octopus/results/grasp-consensus-*.md`
+2. Run a quick adversarial debate challenging the approach:
+
+```
+Skill(skill: "octo:debate", args: "Given this consensus, what are the biggest risks? What alternatives were dismissed too quickly? --rounds 1 --debate-style adversarial --max-words 200")
+```
+
+3. If risks surface, present via AskUserQuestion:
 ```javascript
 AskUserQuestion({
   questions: [{
-    question: "The debate gate surfaced concerns about the chosen approach. How should we proceed?",
-    header: "Debate Gate Result",
+    question: "The debate gate surfaced concerns. How should we proceed?",
+    header: "Debate Gate",
     multiSelect: false,
     options: [
-      {label: "Proceed anyway", description: "Accept the risks and continue to Develop"},
-      {label: "Revise approach", description: "Adjust the plan based on debate findings, then continue"},
-      {label: "Run deeper debate", description: "Run a thorough 3-round debate before deciding"},
-      {label: "Stop and review", description: "Pause the workflow for manual review"}
+      {label: "Proceed anyway", description: "Accept risks and continue to Develop"},
+      {label: "Revise approach", description: "Adjust plan based on debate findings"},
+      {label: "Run deeper debate", description: "Thorough 3-round debate before deciding"},
+      {label: "Stop and review", description: "Pause for manual review"}
     ]
   }]
 })
 ```
 
-4. **"Only if disagreement detected" mode:** Skip the debate if the grasp consensus score was ≥85%. Only trigger when providers showed significant divergence during Define.
+### Phase 3 — Develop
 
-### Step 3c: Develop→Deliver Debate Gate
-
-**Only runs when user selected "at both gates".**
-
-After Tangle (Develop) completes, before Ink (Deliver):
-
-1. **Read the tangle validation** from `~/.claude-octopus/results/tangle-validation-*.md`
-2. **Run a 1-round collaborative debate** on implementation quality:
-
+Invoke the develop skill:
 ```
-🐙 **DEBATE GATE** — Validating implementation before delivery
-🐙 Question: "Review this implementation. What would you change before shipping? What edge cases are missing?"
+Skill(skill: "octo:develop", args: "<user's prompt>")
 ```
 
-Use: `--rounds 1 --debate-style collaborative --max-words 200`
+This dispatches implementation via `orchestrate.sh tangle` with quality gates. Results saved to `~/.claude-octopus/results/tangle-validation-*.md`.
 
-3. **Present any non-trivial findings** to user before proceeding to Deliver.
+### Second Debate Gate (if "both gates" selected)
 
-### Step 4: Present Results & Interactive Next Steps
+Same pattern as above but collaborative style, reviewing implementation quality.
 
-**CRITICAL: After orchestrate.sh completes, you MUST present results AND ask the user what to do next. Do NOT end the session silently.**
+### Phase 4 — Deliver
 
-1. Read the result files from `~/.claude-octopus/results/` and present a concise synthesis
-2. **Always ask what to do next using AskUserQuestion:**
+Invoke the deliver skill:
+```
+Skill(skill: "octo:deliver", args: "<user's prompt>")
+```
+
+This runs multi-provider validation via `orchestrate.sh ink`. Results saved to `~/.claude-octopus/results/delivery-*.md`.
+
+### Auto Code Review (MANDATORY)
+
+After Develop completes, launch two verification agents in background:
+
+```
+Agent(model: "sonnet", subagent_type: "feature-dev:code-reviewer", run_in_background: true,
+  description: "Code review: embrace deliver",
+  prompt: "Review all code changes from this session. Check git diff. Focus on bugs, security, logic errors. Report only high-confidence issues.")
+
+Agent(model: "sonnet", run_in_background: true,
+  description: "E2E test: embrace deliver",
+  prompt: "Run the project's test suite and verify no regressions. Report tests passed/failed.")
+```
+
+Include findings in final results.
+
+## Step 4: Present Results & Next Steps
+
+**MANDATORY: Present results AND ask what to do next.**
+
+Read result files from `~/.claude-octopus/results/` and present a concise synthesis. Then:
 
 ```javascript
 AskUserQuestion({
-  questions: [
-    {
-      question: "The embrace workflow has completed all 4 phases. What would you like to do next?",
-      header: "Next Steps",
-      multiSelect: false,
-      options: [
-        {label: "Review phase outputs in detail", description: "Walk through each phase's findings and deliverables"},
-        {label: "Refine the implementation", description: "Make adjustments based on the results"},
-        {label: "Run another iteration", description: "Re-run specific phases with updated context"},
-        {label: "Start a new task", description: "Move on to something else"},
-        {label: "Export results", description: "Save a summary document of the workflow output"}
-      ]
-    }
-  ]
+  questions: [{
+    question: "The embrace workflow has completed all 4 phases. What next?",
+    header: "Next Steps",
+    multiSelect: false,
+    options: [
+      {label: "Review phase outputs in detail", description: "Walk through each phase's findings"},
+      {label: "Refine the implementation", description: "Make adjustments based on results"},
+      {label: "Run another iteration", description: "Re-run specific phases with updated context"},
+      {label: "Start a new task", description: "Move on to something else"},
+      {label: "Export results", description: "Save a summary document"}
+    ]
+  }]
 })
 ```
 
-**You are PROHIBITED from ending the conversation or session after the workflow completes without asking the user this question.** The user expects an interactive handoff, not a silent exit.
+**PROHIBITED: Ending the session without asking this question.**
 
-## Usage
+---
 
-```bash
-/octo:embrace        # Full workflow with natural language
-```
+## Quick Reference
 
-## What is Embrace?
-
-**Embrace** 🐙 runs all four phases of the Double Diamond methodology in sequence:
-
-1. **Discover** - Multi-perspective research (Codex + Gemini)
-2. **Define** - Consensus building on problem/approach
-3. **Develop** - Implementation with quality validation
-4. **Deliver** - Final quality gates and output
-
-## Natural Language Examples
-
-Just describe what you want to build:
-
-```
-"Build a complete user authentication system"
-"Create a caching layer from research to delivery"
-"Design and implement a payment processing feature"
-```
-
-Claude will automatically use the embrace workflow for complex features that need thorough exploration.
-
-## Autonomy Modes
-
-You can configure how much human oversight you want:
-
-- **Supervised** (default) - Approval required after each phase
-- **Semi-autonomous** - Approval only when quality gates fail
-- **Autonomous** - Runs all 4 phases automatically
-
-Set in `/octo:setup` or use orchestrate.sh flags:
-```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh embrace --autonomy supervised "your prompt"
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh embrace --autonomy autonomous "your prompt"
-```
-
-## When to Use Embrace
-
-Use embrace for:
-- Complex features requiring research → implementation
-- High-stakes projects needing validation
-- Features where you want multiple AI perspectives
-- When you need structured quality gates
-
-## Quality Gates
-
-The tangle (develop) phase includes automatic quality validation:
-- 75% consensus threshold
-- Security checks
-- Best practices verification
-- Performance considerations
-
-If quality gates fail in semi-autonomous mode, you'll be prompted to review.
-
-## Learn More
-
-- `/octo:discover` - Run just the research phase
-- `/octo:define` - Run just the definition phase
-- `/octo:develop` - Run just the development phase
-- `/octo:deliver` - Run just the delivery/review phase
+| Phase | Skill | orchestrate.sh | Output |
+|-------|-------|----------------|--------|
+| Discover | `/octo:discover` | `probe-single` per provider | `probe-synthesis-*.md` |
+| Define | `/octo:define` | `grasp` | `grasp-consensus-*.md` |
+| Develop | `/octo:develop` | `tangle` | `tangle-validation-*.md` |
+| Deliver | `/octo:deliver` | `ink` | `delivery-*.md` |

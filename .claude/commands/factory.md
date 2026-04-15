@@ -27,26 +27,58 @@ After receiving answers: validate spec path exists, set overrides, proceed.
 
 Check via bash:
 ```bash
-codex_available=$(command -v codex &> /dev/null && echo "Available" || echo "Not installed")
-gemini_available=$(command -v gemini &> /dev/null && echo "Available" || echo "Not installed")
+codex_available="Not installed"
+if command -v codex >/dev/null 2>&1; then
+  codex_available="Available"
+fi
+
+gemini_available="Not installed"
+if command -v gemini >/dev/null 2>&1; then
+  gemini_available="Available"
+fi
 ```
 
-Display the factory banner:
+**MANDATORY: Check provider availability before displaying the banner:**
+
+```bash
+echo "PROVIDER_CHECK_START"
+printf "codex:%s\n" "$(command -v codex >/dev/null 2>&1 && echo available || echo missing)"
+printf "gemini:%s\n" "$(command -v gemini >/dev/null 2>&1 && echo available || echo missing)"
+printf "perplexity:%s\n" "$([ -n "${PERPLEXITY_API_KEY:-}" ] && echo available || echo missing)"
+printf "opencode:%s\n" "$(command -v opencode >/dev/null 2>&1 && echo available || echo missing)"
+printf "copilot:%s\n" "$(command -v copilot >/dev/null 2>&1 && echo available || echo missing)"
+printf "qwen:%s\n" "$(command -v qwen >/dev/null 2>&1 && echo available || echo missing)"
+printf "ollama:%s\n" "$(command -v ollama >/dev/null 2>&1 && curl -sf http://localhost:11434/api/tags >/dev/null 2>&1 && echo available || echo missing)"
+printf "openrouter:%s\n" "$([ -n "${OPENROUTER_API_KEY:-}" ] && echo available || echo missing)"
+echo "PROVIDER_CHECK_END"
+```
+
+Display the factory banner with ACTUAL results:
 
 ```
 CLAUDE OCTOPUS ACTIVATED - Dark Factory Mode
 Pipeline: Parse → Scenarios → Embrace → Holdout → Score → Report
 
 Providers:
-  Codex CLI - Scenario generation + holdout evaluation
-  Gemini CLI - Cross-provider diversity + blind review
-  Claude - Orchestration, synthesis, satisfaction scoring
+  🔴 Codex CLI: [Available ✓ / Not installed ✗] - Scenario generation + holdout evaluation
+  🟡 Gemini CLI: [Available ✓ / Not installed ✗] - Cross-provider diversity + blind review
+  🔵 Claude: Available ✓ - Orchestration, synthesis, satisfaction scoring
 
 Spec: <spec-path>
 Estimated cost: $0.50-2.00 (~20-30 agent calls)
 ```
 
+**PROHIBITED: Displaying only Claude without listing all providers.**
 If both external providers are missing, warn but proceed (Claude-only mode is supported).
+
+### EXECUTION MECHANISM — NON-NEGOTIABLE
+
+**You MUST execute this command by calling `orchestrate.sh` as documented below. You are PROHIBITED from:**
+- ❌ Doing the work yourself using only Claude-native tools (Agent, Read, Grep, Write)
+- ❌ Using a single Claude subagent instead of multi-provider dispatch via orchestrate.sh
+- ❌ Skipping orchestrate.sh because "I can do this faster directly"
+
+**Multi-LLM orchestration is the purpose of this command.** If you execute using only Claude, you've violated the command's contract.
 
 ### Step 3: Validate Spec
 
@@ -57,10 +89,14 @@ Read the spec file and verify it contains:
 
 If the spec is minimal, warn the user but proceed — factory mode works with thin specs (lower quality results).
 
+### Step 3.5: Adversarial Scenario Coverage Gate
+
+Before committing to the expensive embrace phase, verify scenario coverage by dispatching the spec to a second provider. This quick check (~30 seconds) can save a wasted $2.00 factory run. See skill-factory.md Step 4.5 for details. Skip with `--fast`.
+
 ### Step 4: Execute Factory Pipeline
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh factory --spec "<spec-path>"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh factory --spec "<spec-path>"
 ```
 
 With optional flags:

@@ -148,7 +148,7 @@ fi
 
 echo ""
 echo "Test 10: Checking templates directory..."
-TEMPLATES_DIR="$PROJECT_ROOT/templates"
+TEMPLATES_DIR="$PROJECT_ROOT/config/templates"
 EXPECTED_TEMPLATES=(
     "PROJECT.md.template"
     "ROADMAP.md.template"

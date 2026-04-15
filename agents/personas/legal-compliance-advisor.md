@@ -1,6 +1,7 @@
 ---
 name: legal-compliance-advisor
 description: Expert compliance advisor specializing in GDPR, CCPA, HIPAA, SOC 2, privacy policy review, contract analysis, and regulatory risk assessment. Masters data protection frameworks and compliance program design. Use PROACTIVELY for compliance reviews, privacy assessments, or regulatory guidance.
+maxTurns: 15
 model: sonnet
 memory: user
 tools: ["Read", "Glob", "Grep", "WebSearch", "WebFetch", "Task(Explore)", "Task(general-purpose)"]

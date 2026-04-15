@@ -4,7 +4,7 @@ aliases:
   - deck
   - slides
   - presentation
-description: Generate slide decks from briefs with optional multi-AI research
+description: Generate slide deck presentations from briefs — use when you need slides, pitch decks, or visual summaries
 trigger: |
   AUTOMATICALLY ACTIVATE when user requests:
   - "create a deck", "build slides", "make a presentation"

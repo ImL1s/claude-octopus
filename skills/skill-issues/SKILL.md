@@ -1,7 +1,7 @@
 ---
 name: skill-issues
 version: 1.0.0
-description: Track and manage project issues across sessions. Use when: AUTOMATICALLY ACTIVATE when user mentions:. "issue" or "issues" or "problem". "track this" or "remember this blocker"
+description: "Track project blockers, bugs, and gaps across sessions — use when issues pile up or need triage. Use when: AUTOMATICALLY ACTIVATE when user mentions:. \"issue\" or \"issues\" or \"problem\". \"track this\" or \"remember this blocker\""
 ---
 
 # Issue Tracking
@@ -281,7 +281,7 @@ Use `/octo:issues list` to see all open issues.
 mkdir -p .octo
 
 # Copy template
-cp ${CLAUDE_PLUGIN_ROOT}/templates/ISSUES.md.template .octo/ISSUES.md
+cp ${HOME}/.claude-octopus/plugin/config/templates/ISSUES.md.template .octo/ISSUES.md
 
 # Replace {{PROJECT_NAME}} with actual project name
 PROJECT_NAME=$(basename $(pwd))

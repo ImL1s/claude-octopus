@@ -81,10 +81,48 @@ if [[ $errors -eq 0 ]] && [[ "$PLUGIN_VERSION" == "$MARKETPLACE_VERSION" ]] && [
     echo -e "  ${GREEN}✓ All versions synchronized: v$PLUGIN_VERSION${NC}"
 fi
 
+# Marketplace installers resolve by git ref; an un-tagged release silently
+# pins every consumer to main@HEAD.
+if git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    if git -C "$ROOT_DIR" show-ref --verify --quiet "refs/tags/v$PLUGIN_VERSION" \
+       || git -C "$ROOT_DIR" show-ref --verify --quiet "refs/tags/$PLUGIN_VERSION"; then
+        echo -e "  ${GREEN}✓ git tag v$PLUGIN_VERSION exists${NC}"
+    else
+        echo -e "  ${YELLOW}WARNING: no git tag v$PLUGIN_VERSION — fresh installs pin to main@HEAD${NC}"
+        ((warnings++))
+    fi
+fi
+
 echo ""
 
 # ============================================================================
-# 3. COMMAND REGISTRATION CHECK
+# 3. CLAUDE PLUGIN VALIDATION
+# ============================================================================
+echo "🧪 Checking Claude plugin validation..."
+
+if command -v claude >/dev/null 2>&1; then
+    if claude plugin validate "$ROOT_DIR/.claude-plugin/plugin.json"; then
+        echo -e "  ${GREEN}✓ Claude plugin validator passed${NC}"
+    else
+        echo -e "  ${RED}ERROR: claude plugin validate failed for plugin.json${NC}"
+        ((errors++))
+    fi
+
+    if claude plugin validate "$ROOT_DIR/.claude-plugin/marketplace.json"; then
+        echo -e "  ${GREEN}✓ Marketplace manifest validator passed${NC}"
+    else
+        echo -e "  ${RED}ERROR: claude plugin validate failed for marketplace.json${NC}"
+        ((errors++))
+    fi
+else
+    echo -e "  ${YELLOW}WARNING: claude CLI not installed; skipping runtime plugin validation${NC}"
+    ((warnings++))
+fi
+
+echo ""
+
+# ============================================================================
+# 4. COMMAND REGISTRATION CHECK
 # ============================================================================
 echo "📝 Checking command registration..."
 
@@ -120,7 +158,7 @@ fi
 echo ""
 
 # ============================================================================
-# 4. COMMAND FRONTMATTER FORMAT CHECK
+# 5. COMMAND FRONTMATTER FORMAT CHECK
 # ============================================================================
 echo "📛 Checking command frontmatter format..."
 
@@ -143,7 +181,7 @@ fi
 echo ""
 
 # ============================================================================
-# 5. SKILL REGISTRATION CHECK
+# 6. SKILL REGISTRATION CHECK
 # ============================================================================
 echo "🎯 Checking skill registration..."
 
@@ -174,7 +212,7 @@ fi
 echo ""
 
 # ============================================================================
-# 6. SKILL FRONTMATTER FORMAT CHECK
+# 7. SKILL FRONTMATTER FORMAT CHECK
 # ============================================================================
 echo "🏷️  Checking skill frontmatter format..."
 
@@ -201,7 +239,7 @@ fi
 echo ""
 
 # ============================================================================
-# 7. MARKETPLACE DESCRIPTION VERSION CHECK
+# 8. MARKETPLACE DESCRIPTION VERSION CHECK
 # ============================================================================
 echo "🏪 Checking marketplace description..."
 
@@ -217,7 +255,7 @@ fi
 echo ""
 
 # ============================================================================
-# 8. GIT TAG CHECK & AUTO-CREATE
+# 9. GIT TAG CHECK & AUTO-CREATE
 # ============================================================================
 echo "🔖 Checking git tag..."
 

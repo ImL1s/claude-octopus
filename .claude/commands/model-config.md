@@ -1,379 +1,419 @@
 ---
 command: model-config
 description: Configure AI provider models for Claude Octopus workflows
-version: 3.0.0
+version: 4.0.0
 category: configuration
-tags: [config, models, providers, codex, gemini, spark, routing, trace]
+tags: [config, models, providers, codex, gemini, spark, routing, trace, interactive]
 created: 2025-01-21
-updated: 2026-03-09
+updated: 2026-04-06
 ---
 
 # Model Configuration
 
-Configure which AI models are used by Claude Octopus workflows. This allows you to:
-- Use premium models (GPT-5.4, Claude Opus 4.6) for complex tasks
-- Use fast models (GPT-5.4, Gemini Flash) for quick feedback
-- Use large-context models (GPT-4.1, 1M tokens) for big codebases
-- Use reasoning models (o3, o3) for complex analysis
-- Configure per-phase model routing (different models for different workflow phases)
-- Control cost/performance tradeoffs with cost modes (budget/standard/premium)
-- Debug model selection with resolution tracing
+**Your first output line MUST be:** `🐙 Octopus Model Config`
 
-## Usage
+Interactive model configuration wizard. Detects installed providers, shows current settings, and guides users through configuration with AskUserQuestion.
+
+## STEP 1: Detect & Display
+
+Run a SINGLE comprehensive detection command:
 
 ```bash
-# View current configuration (models + phase routing + cost mode)
-/octo:model-config
-
-# Show current phase routing table
-/octo:model-config show phases
-
-# Set codex model (persistent)
-/octo:model-config codex gpt-5.4
-
-# Set to Spark for fast mode
-/octo:model-config codex gpt-5.4
-
-# Set gemini model (persistent)
-/octo:model-config gemini gemini-3.1-pro-preview
-
-# Set session-only override (doesn't modify config file)
-/octo:model-config codex gpt-5.2-codex --session
-
-# Configure phase routing (which model to use in which phase)
-/octo:model-config phase deliver gpt-5.4
-/octo:model-config phase develop gpt-5.4
-
-# Reset to defaults
-/octo:model-config reset codex
-/octo:model-config reset all
+echo "=== Provider Detection ==="
+printf "codex:%s\n" "$(command -v codex >/dev/null 2>&1 && echo installed || echo missing)"
+printf "gemini:%s\n" "$(command -v gemini >/dev/null 2>&1 && echo installed || echo missing)"
+printf "perplexity:%s\n" "$([ -n "${PERPLEXITY_API_KEY:-}" ] && echo configured || echo missing)"
+printf "openrouter:%s\n" "$([ -n "${OPENROUTER_API_KEY:-}" ] && echo configured || echo missing)"
+printf "copilot:%s\n" "$(command -v copilot >/dev/null 2>&1 && echo installed || echo missing)"
+printf "qwen:%s\n" "$(command -v qwen >/dev/null 2>&1 && echo installed || echo missing)"
+printf "ollama:%s\n" "$(command -v ollama >/dev/null 2>&1 && curl -sf http://localhost:11434/api/tags >/dev/null 2>&1 && echo running || command -v ollama >/dev/null 2>&1 && echo installed || echo missing)"
+printf "opencode:%s\n" "$(command -v opencode >/dev/null 2>&1 && echo installed || echo missing)"
+echo "=== Config ==="
+if [[ -f ~/.claude-octopus/config/providers.json ]]; then
+  cat ~/.claude-octopus/config/providers.json
+else
+  echo "NO_CONFIG"
+fi
+echo "=== Env ==="
+env | grep -E '^OCTOPUS_|^CLAUDE_MODEL=' 2>/dev/null || echo "none"
 ```
 
-## Model Precedence
+Then display a compact dashboard:
 
-Models are resolved using a 7-tier precedence system (use `OCTOPUS_TRACE_MODELS=1` to see which tier is selected):
+```
+🐙 Octopus Model Config
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. **Environment variables** (highest priority)
-   - `OCTOPUS_CODEX_MODEL` - Override all codex model selection
-   - `OCTOPUS_GEMINI_MODEL` - Override all gemini model selection
-   - `OCTOPUS_PERPLEXITY_MODEL` - Override perplexity model selection
+Providers                          Status
+  🔵 Claude (Sonnet/Opus)          Built-in ✓
+  🔴 Codex (GPT-5.4)              [Installed ✓ / Missing ✗]  → current: <model>
+  🟡 Gemini                        [Installed ✓ / Missing ✗]  → current: <model>
+  🟣 Perplexity                    [Configured ✓ / Not set]
+  🟠 OpenRouter                    [Configured ✓ / Not set]
+  ...other installed providers...
 
-2. **Native Claude Code settings** (Tier 0.5)
-   - `CLAUDE_MODEL` env var - Only applies when provider is `claude`
+Phase Routing
+  discover → <model>    define  → <model>
+  develop  → <model>    deliver → <model>
+  review   → <model>    security → <model>
+  debate   → <model>    research → <model>
 
-3. **Session overrides** (config file `.overrides` section)
-   - Set via `/octo:model-config <provider> <model> --session`
+Cost Mode: <standard/budget/premium>
+```
 
-4. **Phase/role routing** (config file `.routing.phases` / `.routing.roles`)
-   - Per-phase model selection: different models for discover/define/develop/deliver
-   - Supports cross-provider references (e.g., `codex:spark`, `gemini:default`)
+Only show providers that are installed or configured. Don't show rows for providers the user doesn't have.
 
-5. **Capability mapping** (config file `.providers.<provider>.<capability>`)
-   - Maps agent types to specific model variants (spark, mini, reasoning, etc.)
+## STEP 2: Route by Arguments
 
-6. **Cost mode tier mapping** (config file `.tiers`)
-   - `OCTOPUS_COST_MODE=budget` → uses mini/flash models
-   - `OCTOPUS_COST_MODE=premium` → uses full/pro models
-   - Default: `standard`
+**If arguments were provided** (e.g., `/octo:model-config codex gpt-5.4`), skip the interactive flow and execute the CLI-style command directly per the EXECUTION CONTRACT at the bottom.
 
-7. **Config file defaults** (`.providers.<provider>.default`)
-   - Persistent defaults set via `/octo:model-config <provider> <model>`
+**If no arguments**, proceed to the interactive wizard:
 
-8. **Hard-coded fallbacks** (lowest priority)
-   - Codex: `gpt-5.4`
-   - Gemini: `gemini-3.1-pro-preview` (standard), `gemini-3-flash-preview` (fast)
-   - Claude: `claude-sonnet-4.6` (standard), `claude-opus-4.6` (opus)
-   - Perplexity: `sonar-pro` (standard), `sonar` (fast)
+## STEP 3: Interactive Menu
 
-## Debugging Model Selection
+```
+AskUserQuestion({
+  questions: [{
+    question: "What would you like to configure?",
+    header: "Model Config",
+    multiSelect: false,
+    options: [
+      {label: "Provider defaults", description: "Set default models for Codex, Gemini, OpenRouter, etc."},
+      {label: "Phase routing", description: "Choose which model handles each workflow phase (discover, develop, review, etc.)"},
+      {label: "Debate & multi-LLM", description: "Configure which providers participate in debates, parallel execution, and reviews"},
+      {label: "Cost mode", description: "Switch between budget, standard, and premium model tiers"},
+      {label: "Reset to defaults", description: "Reset all or specific provider configuration"}
+    ]
+  }]
+})
+```
 
-When model selection produces unexpected results, enable resolution tracing:
+### Route: Provider Defaults
 
+Build options dynamically from detected providers. Only show providers that are installed/configured:
+
+```
+AskUserQuestion({
+  questions: [{
+    question: "Which provider do you want to configure?",
+    header: "Provider",
+    multiSelect: false,
+    options: [
+      // Always show:
+      {label: "🔵 Claude", description: "Current: claude-sonnet-4.6 / claude-opus-4.6 — built-in, no config needed"},
+      // Only if codex installed:
+      {label: "🔴 Codex (OpenAI)", description: "Current: <current_model> — handles implementation, reasoning"},
+      // Only if gemini installed:
+      {label: "🟡 Gemini (Google)", description: "Current: <current_model> — handles research, creative tasks"},
+      // Only if perplexity configured:
+      {label: "🟣 Perplexity", description: "Current: <current_model> — handles web search, real-time data"},
+      // Only if openrouter configured:
+      {label: "🟠 OpenRouter", description: "Current: <current_model> — routes to GLM, Kimi, DeepSeek"},
+      // Only if opencode installed:
+      {label: "🟤 OpenCode", description: "Current: <current_model> — multi-provider router"}
+    ]
+  }]
+})
+```
+
+After provider selection, show model choices appropriate for that provider:
+
+**Codex example:**
+```
+AskUserQuestion({
+  questions: [{
+    question: "Which Codex model should be the default?",
+    header: "Codex Model",
+    multiSelect: false,
+    options: [
+      {label: "gpt-5.4", description: "Flagship — 400K context, $2.50/$15 MTok, best for complex tasks"},
+      {label: "gpt-5.4 (fast/spark)", description: "1000+ tok/s — 128K context, Pro-only, best for reviews & iteration"},
+      {label: "gpt-5.4-mini", description: "Budget — 400K context, $0.25/$2 MTok, great for simple tasks"},
+      {label: "o3", description: "Reasoning — 200K context, $2/$8 MTok, deep analysis & trade-offs"},
+      {label: "Custom", description: "Enter a custom model name"}
+    ]
+  }]
+})
+```
+
+**Gemini example:**
+```
+AskUserQuestion({
+  questions: [{
+    question: "Which Gemini model should be the default?",
+    header: "Gemini Model",
+    multiSelect: false,
+    options: [
+      {label: "gemini-3.1-pro-preview", description: "Premium — $2.50/$10 MTok, best research quality"},
+      {label: "gemini-3-flash-preview", description: "Fast — $0.25/$1 MTok, good for quick tasks"},
+      {label: "Custom", description: "Enter a custom model name"}
+    ]
+  }]
+})
+```
+
+**OpenRouter example:**
+```
+AskUserQuestion({
+  questions: [{
+    question: "Which OpenRouter models do you want available?",
+    header: "OpenRouter Models",
+    multiSelect: true,
+    options: [
+      {label: "z-ai/glm-5", description: "GLM-5 — 203K context, $0.80/$2.56 MTok, code review specialist"},
+      {label: "moonshotai/kimi-k2.5", description: "Kimi K2.5 — 262K context, $0.45/$2.25 MTok, research & multimodal"},
+      {label: "deepseek/deepseek-r1-0528", description: "DeepSeek R1 — 164K context, $0.70/$2.50 MTok, deep reasoning"},
+      {label: "Custom", description: "Enter a custom model ID"}
+    ]
+  }]
+})
+```
+
+After selection, apply the change:
 ```bash
-export OCTOPUS_TRACE_MODELS=1
-/octo:discover "test query"
-# stderr will show:
-# [model-trace] Resolving: provider=codex type=codex phase=discover role=<none>
-# [model-trace] Tier 1 (env OCTOPUS_CODEX_MODEL): —
-# [model-trace] Tier 2 (session override): —
-# [model-trace] Tier 3 (phase/role routing): gpt-5.4 ← SELECTED (route: codex:spark)
-# [model-trace] ► Result: gpt-5.4
+/path/to/orchestrate.sh set-model <provider> <model>
 ```
 
-## Cost Modes
+Then confirm: `✓ Set <provider> default → <model>`
 
-Control cost/performance tradeoffs globally with `OCTOPUS_COST_MODE`:
+Offer to configure another provider or return to main menu.
 
+### Route: Phase Routing
+
+Show current routing as a visual table, then ask which phase to change:
+
+```
+AskUserQuestion({
+  questions: [{
+    question: "Which phase do you want to re-route?",
+    header: "Phase Routing",
+    multiSelect: false,
+    options: [
+      {label: "🔍 Discover", description: "Current: <model> — research & exploration"},
+      {label: "🎯 Define", description: "Current: <model> — requirements & scope"},
+      {label: "🛠️ Develop", description: "Current: <model> — implementation & building"},
+      {label: "✅ Deliver", description: "Current: <model> — review & validation"},
+      {label: "🔒 Security", description: "Current: <model> — security audits (default: o3 reasoning)"},
+      {label: "💬 Debate", description: "Current: <model> — multi-AI deliberation"},
+      {label: "📖 Review", description: "Current: <model> — code review"},
+      {label: "🔬 Research", description: "Current: <model> — deep research (default: gemini)"},
+      {label: "⚡ Quick", description: "Current: <model> — fast ad-hoc tasks"}
+    ]
+  }]
+})
+```
+
+After phase selection, show model options from ALL available providers (not just one):
+
+```
+AskUserQuestion({
+  questions: [{
+    question: "Which model should handle the <phase> phase?",
+    header: "<Phase> Model",
+    multiSelect: false,
+    options: [
+      // Show cross-provider options
+      {label: "codex:default (gpt-5.4)", description: "Deep reasoning, complex tasks"},
+      {label: "codex:spark (gpt-5.4 fast)", description: "15x faster, good for iteration"},
+      {label: "codex:reasoning (o3)", description: "Deep analysis with chain-of-thought"},
+      {label: "gemini:default", description: "Broad research, creative approaches"},
+      {label: "gemini:flash", description: "Fast, low-cost"},
+      // Only if openrouter configured:
+      {label: "openrouter:glm5 (z-ai/glm-5)", description: "Code review specialist"},
+      {label: "openrouter:kimi (kimi-k2.5)", description: "Research & multimodal"},
+      {label: "Custom", description: "Enter a custom model or cross-provider reference"}
+    ]
+  }]
+})
+```
+
+Apply:
 ```bash
-# Budget mode — use cheapest models for all tasks
-export OCTOPUS_COST_MODE=budget
-/octo:embrace build a CRUD API
-
-# Premium mode — use best models for all tasks
-export OCTOPUS_COST_MODE=premium
-/octo:embrace design payment architecture
-
-# Standard mode (default) — balanced selection
-export OCTOPUS_COST_MODE=standard
+jq --arg phase "<phase>" --arg model "<model>" \
+  '.routing.phases[$phase] = $model' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp.$$" && mv "${CONFIG_FILE}.tmp.$$" "$CONFIG_FILE"
 ```
 
-| Mode | Codex Model | Gemini Model | Best For |
-|------|-------------|--------------|----------|
-| `budget` | gpt-5-codex-mini | gemini-3-flash-preview | Prototyping, low-cost iteration |
-| `standard` | (config default) | (config default) | Normal development |
-| `premium` | (config default) | (config default) | Critical features, security audits |
+Confirm and offer to route another phase.
 
-## Supported Models
+### Route: Debate & Multi-LLM
 
-### Codex Flagship Models
+This configures which providers participate in multi-LLM features:
 
-| Model | Context | Speed | Best For | Cost |
-|-------|---------|-------|----------|------|
-| `gpt-5.4` | 400K | ~65 tok/s | Complex implementation, architecture | $2.50/$15.00 per MTok |
-| `gpt-5.4` | 128K | **1000+ tok/s** | Fast reviews, iteration, prototyping | Pro-only |
-| `gpt-5.2-codex` | 400K | ~65 tok/s | Legacy support | $1.75/$14.00 per MTok |
+```
+AskUserQuestion({
+  questions: [{
+    question: "Which multi-LLM feature do you want to configure?",
+    header: "Multi-LLM Config",
+    multiSelect: false,
+    options: [
+      {label: "Debate participants", description: "Choose which 3-4 providers argue in /octo:debate"},
+      {label: "Parallel execution providers", description: "Choose which providers run in /octo:parallel and /octo:multi"},
+      {label: "Review providers", description: "Choose which providers contribute to /octo:review and /octo:staged-review"},
+      {label: "Consensus threshold", description: "Set agreement % needed to ship (default: 75%)"}
+    ]
+  }]
+})
+```
 
-### Codex Budget & Specialized
+**Debate participants:**
+```
+AskUserQuestion({
+  questions: [{
+    question: "Which providers should participate in debates? (Select 2-4)",
+    header: "Debate Participants",
+    multiSelect: true,
+    options: [
+      // Only show installed/configured providers
+      {label: "🔵 Claude (Sonnet 4.6)", description: "Moderator — instruction-following, synthesis"},
+      {label: "🔴 Codex (GPT-5.4)", description: "Technical depth — architecture, implementation"},
+      {label: "🟡 Gemini", description: "Ecosystem perspective — alternatives, trends"},
+      {label: "🟠 OpenRouter: GLM-5", description: "Code review specialist — quality focus"},
+      {label: "🟠 OpenRouter: Kimi K2.5", description: "Research perspective — broad knowledge"},
+      {label: "🟤 OpenCode", description: "Multi-model router — varied perspectives"}
+    ]
+  }]
+})
+```
 
-| Model | Context | Best For | Cost |
-|-------|---------|----------|------|
-| `gpt-5-codex-mini` | 400K | Budget tasks, ~1 credit/msg | ~$0.25/$2.00 per MTok |
-| `gpt-5.1-codex-max` | 400K | Long-horizon agentic tasks | $1.25/$10.00 per MTok |
-
-### Reasoning Models (via Codex CLI)
-
-| Model | Context | Best For | Cost |
-|-------|---------|----------|------|
-| `o3` | 200K | Deep reasoning, trade-off analysis | $2.00/$8.00 per MTok |
-| `o3` | 200K | Cost-effective reasoning | $1.10/$4.40 per MTok |
-
-### Large Context Models (via Codex CLI)
-
-| Model | Context | Best For | Cost |
-|-------|---------|----------|------|
-| `gpt-5.4` | **1M** | Large codebase analysis, dependency mapping | $2.00/$8.00 per MTok |
-| `gpt-5.4` | **1M** | Budget large-context tasks | $0.40/$1.60 per MTok |
-
-### OpenRouter Models (v8.11.0)
-
-| Agent Type | Model | Context | Best For | Cost |
-|------------|-------|---------|----------|------|
-| `openrouter-glm5` | `z-ai/glm-5` | 203K | Code review specialist | $0.80/$2.56 per MTok |
-| `openrouter-kimi` | `moonshotai/kimi-k2.5` | **262K** | Research, multimodal | $0.45/$2.25 per MTok |
-| `openrouter-deepseek` | `deepseek/deepseek-r1` | 164K | Deep reasoning | $0.70/$2.50 per MTok |
-
-Requires `OPENROUTER_API_KEY` to be set.
-
-### Gemini (Google)
-
-| Model | Best For | Cost |
-|-------|----------|------|
-| `gemini-3.1-pro-preview` | Premium quality research | $2.50/$10.00 per MTok |
-| `gemini-3-flash-preview` | Fast, low-cost tasks | $0.25/$1.00 per MTok |
-
-## Phase Routing
-
-Contextual phase routing selects the best model for each workflow phase:
-
-| Phase | Default Routing | Rationale |
-|-------|----------------|-----------|
-| `discover` | codex default | Deep research needs max reasoning |
-| `define` | codex default | Requirements analysis needs precision |
-| `develop` | codex default | Complex implementation |
-| `deliver` | `codex:spark` | Fast review feedback (15x faster) |
-| `review` | `codex:spark` | Rapid PR review feedback |
-| `security` | `codex:reasoning` | Thorough security analysis via o3 |
-| `research` | `gemini:default` | Gemini excels at broad research |
-| `quick` | `codex:spark` | Speed over depth |
-| `debate` | codex default | Deep reasoning for arguments |
-
-### Customizing Phase Routing
-
+Save debate config to providers.json under `.routing.features.debate`:
 ```bash
-# Use Spark for develop phase (faster iteration)
-/octo:model-config phase develop codex:spark
-
-# Use reasoning model for security (deeper analysis)
-/octo:model-config phase security o3
-
-# Use Gemini for discover phase
-/octo:model-config phase discover gemini:default
-
-# View current phase routing
-/octo:model-config show phases
+jq --argjson providers '["claude","codex","gemini"]' \
+  '.routing.features.debate = $providers' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp.$$" && mv "${CONFIG_FILE}.tmp.$$" "$CONFIG_FILE"
 ```
 
-Phase routing supports both direct model names (`gpt-5.4`) and cross-provider references (`codex:spark`, `gemini:default`).
+**Parallel execution:** Same pattern — select which providers to include in `/octo:parallel` and `/octo:multi` dispatches.
 
-## Configuration File
+**Review providers:** Select which providers contribute analysis to `/octo:review`.
 
-Location: `~/.claude-octopus/config/providers.json`
-
-```json
-{
-  "version": "3.0",
-  "providers": {
-    "codex": {
-      "default": "gpt-5.4",
-      "fallback": "gpt-5.2-codex",
-      "spark": "gpt-5.4",
-      "mini": "gpt-5-codex-mini",
-      "reasoning": "o3",
-      "large_context": "gpt-4.1"
-    },
-    "gemini": {
-      "default": "gemini-3.1-pro-preview",
-      "fallback": "gemini-3-flash-preview",
-      "flash": "gemini-3-flash-preview",
-      "image": "gemini-3-pro-image-preview"
-    }
-  },
-  "routing": {
-    "phases": {
-      "deliver": "codex:spark",
-      "review": "codex:spark",
-      "security": "codex:reasoning",
-      "research": "gemini:default"
-    },
-    "roles": {
-      "researcher": "perplexity"
-    }
-  },
-  "tiers": {
-    "budget": { "codex": "mini", "gemini": "flash" },
-    "standard": { "codex": "default", "gemini": "default" },
-    "premium": { "codex": "default", "gemini": "default" }
-  },
-  "overrides": {}
-}
+**Consensus threshold:**
+```
+AskUserQuestion({
+  questions: [{
+    question: "What agreement threshold should be required before shipping?",
+    header: "Consensus Threshold",
+    multiSelect: false,
+    options: [
+      {label: "50% — Majority", description: "At least half of providers must agree"},
+      {label: "75% — Strong consensus (default)", description: "Three-quarters agreement required"},
+      {label: "100% — Unanimous", description: "All providers must agree (strict)"},
+      {label: "Custom", description: "Enter a custom percentage"}
+    ]
+  }]
+})
 ```
 
-### Auto-Migration
+### Route: Cost Mode
 
-If your config file uses an older format (v1.0 or v2.0), it will be automatically migrated to v3.0 on first use. Stale model names (e.g., `gpt-4o`, `gemini-1.5-pro`) are also auto-upgraded.
-
-## Environment Variables Reference
-
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `OCTOPUS_CODEX_MODEL` | Override all Codex model selection | `gpt-5.4` |
-| `OCTOPUS_GEMINI_MODEL` | Override all Gemini model selection | `gemini-3.1-pro-preview` |
-| `OCTOPUS_PERPLEXITY_MODEL` | Override Perplexity model | `sonar-pro` |
-| `OCTOPUS_COST_MODE` | Set cost tier: `budget`, `standard`, `premium` | `budget` |
-| `OCTOPUS_TRACE_MODELS` | Enable model resolution tracing | `1` |
-| `OCTOPUS_CODEX_ALLOWED_MODELS` | Allowlist for Codex models | `gpt-5.4,gpt-5.2-codex` |
-| `OCTOPUS_GEMINI_ALLOWED_MODELS` | Allowlist for Gemini models | `gemini-3-flash-preview` |
-| `OCTOPUS_GEMINI_SANDBOX` | Gemini execution mode | `headless` (default) |
-
-## Spark vs Full Codex: When to Use Which
-
-| Factor | GPT-5.4 (Full) | GPT-5.4 (Fast/Spark) |
-|--------|----------------|----------------------|
-| **Speed** | ~65 tok/s | **1000+ tok/s** (15x) |
-| **Context** | 400K tokens | 128K tokens |
-| **Image input** | Yes | No (text only) |
-| **Availability** | All plans | Pro ($200/mo) only |
-| **Best for** | Complex tasks, security, architecture | Reviews, iteration, quick tasks |
-
-**Rule of thumb:** Use fast mode when speed matters more than depth. Use full Codex when accuracy and context window matter.
-
-## Valid Providers
-
-The following providers can be configured: `codex`, `gemini`, `claude`, `perplexity`, `openrouter`.
-
-Custom/local providers (e.g., Ollama proxies) can be set using the `--force` flag:
-```bash
-/octo:model-config custom-local llama-3.2 --force
+```
+AskUserQuestion({
+  questions: [{
+    question: "Which cost mode do you want?",
+    header: "Cost Mode",
+    multiSelect: false,
+    options: [
+      {label: "💰 Budget", description: "Use cheapest models: gpt-5.4-mini, gemini-flash — best for prototyping"},
+      {label: "⚖️ Standard (current default)", description: "Balanced: use your configured defaults"},
+      {label: "🚀 Premium", description: "Use best available models for every task — higher cost, best quality"}
+    ]
+  }]
+})
 ```
 
-## Requirements
+Apply by showing the user the export command:
+```
+To activate: export OCTOPUS_COST_MODE=<mode>
+To make permanent: add to ~/.zshrc or ~/.bashrc
+```
 
-- `jq` - JSON processor (install: `brew install jq` or `apt install jq`)
+Or offer to set it in the config file.
+
+### Route: Reset
+
+```
+AskUserQuestion({
+  questions: [{
+    question: "What do you want to reset?",
+    header: "Reset",
+    multiSelect: false,
+    options: [
+      {label: "Reset all", description: "Restore all providers and routing to defaults"},
+      {label: "Reset Codex only", description: "Reset Codex to gpt-5.4 default"},
+      {label: "Reset Gemini only", description: "Reset Gemini to gemini-3.1-pro-preview default"},
+      {label: "Reset phase routing only", description: "Restore default phase-to-model mapping"},
+      {label: "Cancel", description: "Go back without changing anything"}
+    ]
+  }]
+})
+```
+
+## STEP 4: Loop or Exit
+
+After each configuration change, offer:
+
+```
+AskUserQuestion({
+  questions: [{
+    question: "Configuration saved. What next?",
+    header: "Next",
+    multiSelect: false,
+    options: [
+      {label: "Configure something else", description: "Return to the main menu"},
+      {label: "Show final config", description: "Display the complete updated configuration"},
+      {label: "Done", description: "Exit model configuration"}
+    ]
+  }]
+})
+```
 
 ---
 
-## EXECUTION CONTRACT (Mandatory)
+## CLI-STYLE EXECUTION CONTRACT (for direct arguments)
 
-When the user invokes `/octo:model-config`, you MUST:
+When invoked WITH arguments (e.g., `/octo:model-config codex gpt-5.4`), skip the interactive flow and execute directly:
 
 1. **Parse arguments** to determine action:
-   - No args → View current configuration including phase routing and cost mode
    - `show phases` → Display formatted phase routing table
    - `<provider> <model>` → Set model (persistent)
+   - `<provider>.<capability> <model>` → Set capability-specific model
    - `<provider> <model> --session` → Set model (session only)
    - `phase <phase> <model>` → Set phase-specific model routing
    - `reset <provider|all>` → Reset to defaults
 
-2. **View Configuration** (no args):
+2. **Set Model** (`<provider> <model>` or with `--session`):
    ```bash
-   # Check environment variables
-   env | grep OCTOPUS_ 2>/dev/null || echo "No OCTOPUS_ environment variables set"
-
-   # Show config file contents
-   if [[ -f ~/.claude-octopus/config/providers.json ]]; then
-     cat ~/.claude-octopus/config/providers.json | jq '.'
-   else
-     echo "No configuration file found (using defaults)"
-   fi
-   ```
-   Then display a formatted summary table showing:
-   - Provider models (codex, gemini) with fallbacks
-   - Phase routing (if configured)
-   - Active cost mode
-   - Active environment overrides
-   - Available subcommands
-
-3. **Show Phases** (`show phases`):
-   ```bash
-   if [[ -f ~/.claude-octopus/config/providers.json ]]; then
-     echo "Phase Routing Configuration:"
-     jq -r '.routing.phases // {} | to_entries[] | "  \(.key)\t→ \(.value)"' ~/.claude-octopus/config/providers.json 2>/dev/null
-   fi
-   ```
-   Display as a formatted table with phase name, routed model, and rationale.
-   Show phases NOT in config that use hardcoded defaults.
-
-4. **Set Model** (`<provider> <model>` or with `--session`):
-   Execute via orchestrate.sh's `set_provider_model()`:
-   ```bash
-   /path/to/orchestrate.sh set-model <provider> <model> [--session]
-   ```
-   The function validates provider (whitelist), model name (injection safety), and uses atomic file operations.
-   Show the updated config after setting.
-
-5. **Set Phase Routing** (`phase <phase> <model>`):
-   Validate phase name against known phases: `discover`, `define`, `develop`, `deliver`, `quick`, `debate`, `review`, `security`, `research`.
-   ```bash
-   # Update routing.phases in config file
-   local config_file="${HOME}/.claude-octopus/config/providers.json"
-   jq --arg phase "<phase>" --arg model "<model>" '.routing.phases[$phase] = $model' "$config_file" > "${config_file}.tmp.$$" && mv "${config_file}.tmp.$$" "$config_file"
-   echo "✓ Set phase routing: $phase → $model"
+   # Read and validate
+   CONFIG_FILE="${HOME}/.claude-octopus/config/providers.json"
+   # Use jq to set the model
+   jq --arg p "<provider>" --arg m "<model>" '.providers[$p].default = $m' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp.$$" && mv "${CONFIG_FILE}.tmp.$$" "$CONFIG_FILE"
    ```
 
-6. **Reset Model** (`reset <provider|all>`):
-   Execute via orchestrate.sh's `reset_provider_model()`.
-   Show the updated config after reset.
+   **Dot syntax** (`<provider>.<capability> <model>`):
+   ```bash
+   jq --arg p "<provider>" --arg c "<capability>" --arg m "<model>" \
+     '.providers[$p][$c] = $m' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp.$$" && mv "${CONFIG_FILE}.tmp.$$" "$CONFIG_FILE"
+   ```
 
-7. **Provide guidance** on:
-   - Which models are appropriate for which tasks/phases
-   - Cost implications of premium models vs Spark vs budget
-   - How to use environment variables for temporary changes
-   - How to use `OCTOPUS_TRACE_MODELS=1` for debugging
-   - How to use `OCTOPUS_COST_MODE` for cost control
+3. **Set Phase Routing** (`phase <phase> <model>`):
+   Validate phase name against: `discover`, `define`, `develop`, `deliver`, `quick`, `debate`, `review`, `security`, `research`.
+   ```bash
+   jq --arg phase "<phase>" --arg model "<model>" '.routing.phases[$phase] = $model' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp.$$" && mv "${CONFIG_FILE}.tmp.$$" "$CONFIG_FILE"
+   ```
+
+4. **Reset**: Use default values from the ensure_config block in `scripts/helpers/octo-model-config.sh`.
+
+5. Always show confirmation and the updated value after any change.
 
 ### Validation Gates
 
-- Parsed arguments correctly
-- Action determined (view/show-phases/set/set-phase/reset)
-- Functions called with Bash tool (not simulated)
-- Configuration displayed to user
-- Clear confirmation messages shown
+- Provider names validated against whitelist: `codex gemini claude perplexity openrouter opencode copilot ollama qwen`
 - Phase names validated against known list
+- Model names checked for injection safety (alphanumeric, hyphens, dots, slashes only)
+- Config file operations use atomic write (tmp + mv)
+- Always use `jq --arg` (never string interpolation)
 
 ### Prohibited Actions
 
 - Assuming configuration without reading the file
-- Suggesting edits without using the provided functions
-- Skipping validation of provider names
-- Ignoring errors from jq or function calls
-- Using string interpolation in jq expressions (use `--arg` instead)
+- Skipping validation of provider/phase names
+- Using string interpolation in jq expressions
+- Showing providers that aren't installed (in interactive mode)

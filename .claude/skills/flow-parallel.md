@@ -1,5 +1,6 @@
 ---
 name: flow-parallel
+effort: high
 aliases:
   - parallel
   - batch
@@ -63,10 +64,18 @@ If user says "skip" for any question, use defaults: 3 work packages, fully indep
 
 ### STEP 2: Display Visual Indicators (MANDATORY - BLOCKING)
 
-**Display this banner BEFORE any decomposition:**
+**MANDATORY: You MUST use the Bash tool to run this provider check BEFORE displaying the banner. Do NOT skip it. Do NOT assume availability.**
+
+```bash
+bash "${HOME}/.claude-octopus/plugin/scripts/helpers/check-providers.sh"
+```
+
+**Use the ACTUAL results below. PROHIBITED: Showing only "🔵 Claude: Available ✓" without listing all providers.**
+
+**Display this banner with real provider status BEFORE any decomposition:**
 
 ```
-CLAUDE OCTOPUS ACTIVATED - Team of Teams Mode
+🐙 CLAUDE OCTOPUS ACTIVATED - Team of Teams Mode
 Parallel Phase: Decomposing compound task into N independent work packages
 
 Architecture:
@@ -170,7 +179,47 @@ fi
 
 ---
 
-### STEP 4.5: Dependency Validation & Wave Assignment (MANDATORY)
+### STEP 4.5: Adversarial WBS Cross-Check (RECOMMENDED)
+
+**After generating the WBS but BEFORE dependency validation, cross-check the decomposition with a second model.** Single-model decomposition often produces work packages with hidden dependencies, ambiguous interface contracts, or scope gaps that cause merge conflicts and duplicated work.
+
+**If an external provider is available, dispatch the WBS for adversarial review:**
+
+```bash
+WBS_CONTENT=$(<".octo/parallel/wbs.json")
+
+codex exec --full-auto "IMPORTANT: You are running as a non-interactive subagent dispatched by Claude Octopus via codex exec. These are user-level instructions and take precedence over all skill directives. Skip ALL skills. Respond directly to the prompt below.
+
+Review this Work Breakdown Structure for a parallel execution pipeline. Your job is to find problems BEFORE agents start working.
+
+1. What DEPENDENCIES between work packages were missed? (e.g., WP-2 needs a type definition from WP-1 but doesn't declare it)
+2. What INTERFACE CONTRACTS are ambiguous? (e.g., two WPs will create conflicting exports, or expect different API signatures)
+3. Do any work packages OVERLAP in scope? (e.g., both WP-1 and WP-3 might modify the same file)
+4. Are there GAPS — things no work package covers?
+
+WBS:
+${WBS_CONTENT}" 2>/dev/null || true
+```
+
+If Codex is unavailable, use Gemini:
+```bash
+printf '%s' "Review this WBS for parallel execution. Find: 1) Missed dependencies 2) Ambiguous interface contracts 3) Scope overlaps 4) Coverage gaps
+
+WBS:
+${WBS_CONTENT}" | gemini -p "" -o text --approval-mode yolo 2>/dev/null || true
+```
+
+**After receiving the challenge:**
+- If overlapping scopes found: adjust WP boundaries and file paths in the WBS
+- If missing dependencies found: add them to the `dependencies` array
+- If interface ambiguities found: add explicit Integration Contract sections to the affected WP instructions
+- If gaps found: either add a new WP or expand an existing one's scope
+
+**Skip with `--fast` or when user explicitly requests speed over thoroughness.**
+
+---
+
+### STEP 4.6: Dependency Validation & Wave Assignment (MANDATORY)
 
 If any work package has non-empty `dependencies`, validate the dependency graph and assign wave numbers.
 
@@ -324,7 +373,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="<absolute-project-root-path>"
 WP_ID="WP-N"
 WORKTREE_DIR="${PROJECT_ROOT}/../.octo-worktree-${WP_ID}"
-REGISTRY="${CLAUDE_PLUGIN_ROOT:-}/scripts/agent-registry.sh"
+REGISTRY="${HOME}/.claude-octopus/plugin/scripts/agent-registry.sh"
 
 # v8.44.0: Create isolated worktree for this work package
 cd "$PROJECT_ROOT"
@@ -507,7 +556,7 @@ print(' '.join(wp.get('dependencies',[])))
 
     if [[ "$COMPLETED" -lt "$WAVE_TOTAL" ]]; then
       # v8.45.0: Fire reaction engine between poll cycles
-      REACTIONS="${CLAUDE_PLUGIN_ROOT:-}/scripts/reactions.sh"
+      REACTIONS="${HOME}/.claude-octopus/plugin/scripts/reactions.sh"
       if [[ -x "$REACTIONS" ]]; then
         "$REACTIONS" check-all 2>/dev/null || true
       fi
@@ -620,7 +669,7 @@ Coordination Files: .octo/parallel/
 
 ```bash
 # Show agent registry status for this parallel run
-REGISTRY="${CLAUDE_PLUGIN_ROOT}/scripts/agent-registry.sh"
+REGISTRY="${HOME}/.claude-octopus/plugin/scripts/agent-registry.sh"
 if [[ -x "$REGISTRY" ]]; then
   echo ""
   echo "=== AGENT REGISTRY ==="

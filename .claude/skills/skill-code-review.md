@@ -3,7 +3,7 @@ name: skill-code-review
 aliases:
   - review
   - code-review
-description: Expert multi-AI code review with quality and security analysis
+description: Expert multi-AI code review with inline PR comments — use for thorough quality and security analysis
 context: fork
 agent: Explore
 execution_mode: enforced
@@ -16,16 +16,41 @@ validation_gates:
 
 # Code Review Skill
 
+## MANDATORY COMPLIANCE — DO NOT SKIP
+
+**When this skill is invoked, you MUST execute the multi-LLM review pipeline. You are PROHIBITED from:**
+- Doing a direct single-model code review without multi-provider synthesis
+- Deciding the scope is "too broad" and narrowing it without asking the user
+- Skipping the provider check or structured review phases
+- Substituting two background Sonnet agents for the full multi-provider pipeline
+- Rationalizing "a focused audit would be more effective" — the user wants multi-LLM perspectives
+
+---
+
+**Your first output line MUST be:** `🐙 **CLAUDE OCTOPUS ACTIVATED** - Multi-LLM Code Review`
+
 Invokes the code-reviewer persona for thorough code analysis during the `ink` (deliver) phase.
+
+## Quick Mode
+
+For fast sanity checks (staged changes, small PRs), skip the full review pipeline and run just two phases:
+
+```bash
+# Quick: grasp (consensus on scope) → tangle (parallel review)
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh grasp "[review request]"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh tangle "[synthesized scope]"
+```
+
+Use quick mode when user says "check this PR", "quick review", "sanity check my changes", or for pre-commit checks. Use the full review for PRs with security/architecture impact.
 
 ## Usage
 
 ```bash
 # Via orchestrate.sh
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh spawn code-reviewer "Review this pull request for security issues"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh spawn code-reviewer "Review this pull request for security issues"
 
 # Via auto-routing (detects review intent)
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh auto "review the authentication implementation"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh auto "review the authentication implementation"
 ```
 
 ## Capabilities
@@ -260,7 +285,7 @@ ${REVIEW_SYNTHESIS}
     echo "Review posted to PR #${PR_NUM}"
 
     # Update agent registry if this agent is tracked
-    REGISTRY="${CLAUDE_PLUGIN_ROOT}/scripts/agent-registry.sh"
+    REGISTRY="${HOME}/.claude-octopus/plugin/scripts/agent-registry.sh"
     if [[ -x "$REGISTRY" ]]; then
         AGENT_ID=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
         "$REGISTRY" update "$AGENT_ID" --pr "$PR_NUM" 2>/dev/null || true

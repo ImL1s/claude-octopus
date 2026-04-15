@@ -5,6 +5,8 @@ description: Resume a previous agent by ID — continue an interrupted task wher
 
 # /octo:resume — Agent Resume
 
+**Your first output line MUST be:** `🐙 Octopus Agent Resume`
+
 Resume a previously-running Claude agent by ID. Picks up the agent's transcript and continues where it left off.
 
 ## Step 1: Get the Agent ID
@@ -18,7 +20,7 @@ If you don't have the agent ID:
 
 Use the Bash tool to execute:
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh agent-resume "$ARGUMENTS"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh agent-resume "$ARGUMENTS"
 ```
 
 Pass the agent ID as `$ARGUMENTS`. Optionally append a follow-up prompt:

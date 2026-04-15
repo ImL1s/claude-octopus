@@ -5,10 +5,10 @@
 set -eo pipefail
 
 CONFIG_FILE="${HOME}/.claude-octopus/config/providers.json"
-CACHE_FILE="/tmp/octo-model-cache-${USER}-${CLAUDE_CODE_SESSION:-global}.json"
+CACHE_FILE="/tmp/octo-model-cache-${USER:-${USERNAME:-unknown}}-${CLAUDE_CODE_SESSION:-global}.json"
 
 # Known providers and phases for validation
-KNOWN_PROVIDERS="codex gemini claude perplexity openrouter"
+KNOWN_PROVIDERS="codex gemini claude perplexity openrouter opencode copilot ollama qwen"
 KNOWN_PHASES="discover define develop deliver quick debate review security research"
 
 # Colors
@@ -57,7 +57,7 @@ ensure_config() {
       "default": "gpt-5.4",
       "fallback": "gpt-5.4",
       "spark": "gpt-5.4",
-      "mini": "gpt-5-codex-mini",
+      "mini": "gpt-5.4-mini",
       "reasoning": "o3",
       "large_context": "gpt-5.4"
     },
@@ -74,6 +74,11 @@ ensure_config() {
     "perplexity": {
       "default": "sonar-pro",
       "fast": "sonar"
+    },
+    "opencode": {
+      "default": "google/gemini-2.5-flash",
+      "fast": "google/gemini-2.5-flash",
+      "research": "z-ai/glm-5.1"
     }
   },
   "routing": {
@@ -88,9 +93,9 @@ ensure_config() {
     }
   },
   "tiers": {
-    "budget": { "codex": "mini", "gemini": "flash" },
-    "standard": { "codex": "default", "gemini": "default" },
-    "premium": { "codex": "default", "gemini": "default" }
+    "budget": { "codex": "mini", "gemini": "flash", "opencode": "fast" },
+    "standard": { "codex": "default", "gemini": "default", "opencode": "default" },
+    "premium": { "codex": "default", "gemini": "default", "opencode": "default" }
   },
   "overrides": {}
 }
@@ -128,7 +133,7 @@ cmd_list() {
     # Environment overrides
     echo -e "\n${YELLOW}Environment Overrides:${NC}"
     local has_env=false
-    for var in OCTOPUS_CODEX_MODEL OCTOPUS_GEMINI_MODEL OCTOPUS_PERPLEXITY_MODEL OCTOPUS_COST_MODE OCTOPUS_TRACE_MODELS; do
+    for var in OCTOPUS_CODEX_MODEL OCTOPUS_GEMINI_MODEL OCTOPUS_PERPLEXITY_MODEL OCTOPUS_OPENCODE_MODEL OCTOPUS_COST_MODE OCTOPUS_TRACE_MODELS; do
         if [[ -n "${!var:-}" ]]; then
             echo "  $var=${!var}"
             has_env=true
@@ -198,7 +203,7 @@ cmd_verify() {
     log_info "Verifying model accessibility..."
 
     local errors=0
-    for cli in codex gemini claude; do
+    for cli in codex gemini claude opencode; do
         if command -v "$cli" &>/dev/null; then
             local model
             model=$(jq -r --arg p "$cli" '.providers[$p].default // "n/a"' "$CONFIG_FILE")
@@ -217,10 +222,19 @@ cmd_verify() {
 }
 
 cmd_set() {
-    local provider="$1"
+    local provider_arg="$1"
     local model="$2"
     local session=false
     local force=false
+    local provider="$provider_arg"
+    local capability=""
+
+    # Parse dot syntax: provider.capability (e.g., opencode.research)
+    if [[ "$provider_arg" == *.* ]]; then
+        provider="${provider_arg%%.*}"
+        capability="${provider_arg#*.}"
+    fi
+
     for arg in "${@:3}"; do
         [[ "$arg" == "--session" ]] && session=true
         [[ "$arg" == "--force" ]] && force=true
@@ -247,7 +261,11 @@ cmd_set() {
     ensure_config
 
     # v8.49.0: Use jq --arg for injection safety
-    if [[ "$session" == "true" ]]; then
+    if [[ -n "$capability" ]]; then
+        jq --arg p "$provider" --arg c "$capability" --arg m "$model" \
+            '.providers[$p][$c] = $m' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp.$$" && mv "${CONFIG_FILE}.tmp.$$" "$CONFIG_FILE"
+        log_info "Set capability model: ${provider}.${capability} → $model"
+    elif [[ "$session" == "true" ]]; then
         jq --arg p "$provider" --arg m "$model" '.overrides[$p] = $m' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp.$$" && mv "${CONFIG_FILE}.tmp.$$" "$CONFIG_FILE"
         log_info "Set session override: $provider → $model"
     else
@@ -294,7 +312,7 @@ cmd_models() {
         "gpt-5.4-pro|400|yes|yes|no|codex|premium|active"
         "gpt-5.3-codex|400|yes|yes|no|codex|standard|active"
         "gpt-5.2-codex|400|yes|yes|no|codex|standard|active"
-        "gpt-5-codex-mini|400|yes|no|no|codex|budget|active"
+        "gpt-5.4-mini|400|yes|no|no|codex|budget|active"
         "gpt-5.1-codex-max|400|yes|yes|no|codex|premium|active"
         "o3|200|yes|no|yes|codex|premium|active"
         "o3-mini|200|yes|no|yes|codex|budget|active"
@@ -307,7 +325,11 @@ cmd_models() {
         "sonar|128|no|no|no|perplexity|budget|active"
         "z-ai/glm-5|203|yes|no|no|openrouter|standard|active"
         "moonshotai/kimi-k2.5|262|yes|yes|no|openrouter|standard|active"
-        "deepseek/deepseek-r1|164|yes|no|yes|openrouter|standard|active"
+        "deepseek/deepseek-r1-0528|164|yes|no|yes|openrouter|standard|active"
+        "google/gemini-2.5-flash|1000|yes|no|no|opencode|budget|active"
+        "openai/gpt-5.4|400|yes|yes|no|opencode|premium|active"
+        "openai/gpt-5.4-mini|400|yes|no|no|opencode|budget|active"
+        "z-ai/glm-5.1|203|yes|no|no|opencode|standard|active"
     )
 
     for entry in "${models[@]}"; do

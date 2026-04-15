@@ -1,109 +1,173 @@
-# Claude Octopus
+# 🐙 Claude Octopus
 
-A Claude Code plugin that turns one model into three. Orchestrates Codex, Gemini, and Claude with distinct roles, adversarial review, and consensus gates — so no single model's blind spots slip through.
+Every AI model has blind spots. Claude Octopus puts up to eight of them on every task, so blind spots surface before you ship — not after. It orchestrates Codex, Gemini, Copilot, Qwen, Ollama, Perplexity, and OpenRouter alongside Claude Code, with consensus gates that flag any disagreements.
 
 <p align="center">
-  <img src="assets/social-preview.jpg" alt="Claude Octopus" width="640">
+  <img src="docs/assets/demo.gif" alt="Claude Octopus Demo — debate and research with multiple AI providers" width="720">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-9.7.6-blue" alt="Version 9.7.6">
-  <img src="https://img.shields.io/badge/Claude_Code-v2.1.50+-blueviolet" alt="Requires Claude Code v2.1.50+">
-  <img src="https://img.shields.io/badge/Factory_AI-Compatible-orange" alt="Factory AI Compatible">
+  <a href="https://claude.ai"><img src="https://img.shields.io/badge/Claude-Built_with_AI-c96442?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTEyIDJhMTAgMTAgMCAxIDAgMCAyMCAxMCAxMCAwIDAgMCAwLTIwbTAgMS44YTEuMiAxLjIgMCAwIDEgLjg1LjM1bDEuNSA0LjVhLjYuNiAwIDAgMCAuMzUuMzVsNC41IDEuNWExLjIgMS4yIDAgMCAxIDAgMi4yN2wtNC41IDEuNWEuNi42IDAgMCAwLS4zNS4zNWwtMS41IDQuNWExLjIgMS4yIDAgMCAxLTIuMjcgMGwtMS41LTQuNWEuNi42IDAgMCAwLS4zNS0uMzVsLTQuNS0xLjVhMS4yIDEuMiAwIDAgMSAwLTIuMjdsNC41LTEuNWEuNi42IDAgMCAwIC4zNS0uMzVsMS41LTQuNUExLjIgMS4yIDAgMCAxIDEyIDMuOCIvPjwvc3ZnPg==&labelColor=333" alt="Built with Claude"></a>
+  <a href="https://github.com/nyldn/claude-octopus/actions/workflows/test.yml"><img src="https://github.com/nyldn/claude-octopus/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+  <img src="https://img.shields.io/badge/Tests-146_passing-brightgreen" alt="146 tests passing">
+  <img src="https://img.shields.io/badge/Version-9.22.0-blue" alt="Version 9.22.0">
+  <img src="https://img.shields.io/badge/Claude_Code-v2.1.83+-blueviolet" alt="Requires Claude Code v2.1.83+">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License">
 </p>
 
-🐙 **Three brains, one workflow.** Other multi-AI tools run providers in parallel and hand you three answers. Octopus assigns each model a distinct role — Codex for implementation depth, Gemini for ecosystem breadth, Claude for synthesis — then enforces a 75% consensus gate before anything ships. Disagreements get caught, not ignored.
+🐙 **Research, build, review, and ship — with eight AI providers checking each other's work.** Say what you need, and the right workflow runs. A 75% consensus gate catches disagreements before they reach production. No single model's blind spots slip through.
 
-🧠 **Persistent cross-session memory.** Deeply integrates with [claude-mem](https://github.com/thedotmack/claude-mem) for searchable, persistent memory across conversations — past decisions, research, and context survive session boundaries so your next workflow picks up where the last one left off.
+🧠 **Remembers across sessions.** Integrates with [claude-mem](https://github.com/thedotmack/claude-mem) for persistent memory — past decisions, research, and context survive session boundaries.
 
-⚡ **Spec in, software out.** Dark Factory mode takes a spec and autonomously runs the full pipeline — research, define, develop, deliver — with holdout testing and satisfaction scoring. You review the output, not every step.
+⚡ **Spec in, software out.** Dark Factory mode takes a spec and autonomously runs the full pipeline — research, define, develop, deliver. You review the output, not every step.
 
-🔄 **Methodology, not just machinery.** Built on the Double Diamond framework, every task moves through four structured phases: discover, define, develop, deliver. Quality gates between phases mean sloppy work can't advance. Other orchestrators give you infrastructure to build workflows on — Octopus gives you the workflows.
+🔄 **Four-phase methodology, not just tools.** Every task moves through Discover → Define → Develop → Deliver, with quality gates between phases. Other orchestrators give you infrastructure. Octopus gives you the workflows.
 
-🐙 **32 specialized personas, 39 commands, 50 skills.** Not generic agents. A security-auditor that thinks in OWASP. A backend-architect that designs APIs. A ui-ux-designer grounded in BM25 design intelligence. Personas activate automatically based on what you ask — say "audit my API" and the right expert shows up. Don't know the command name? Just say what you need — the smart router figures it out.
+🐙 **32 specialized personas** (role-specific AI agents like security-auditor, backend-architect), **48 commands** (slash commands you type), **51 skills** (reusable workflow modules). Say "audit my API" and the right expert activates. Don't know the command? The smart router figures it out.
 
-🐙 **Works with just Claude. Scales to three.** Zero external providers needed to start. You get every persona, every workflow, every skill on day one. Add Codex or Gemini and multi-AI orchestration lights up — parallel research, adversarial debate, cross-model review.
+🐙 **Works with just Claude. Scales to eight.** Zero providers needed to start. Add them one at a time — each activates automatically when detected.
 
-💰 **Subscription Advantage.** Codex and Gemini authenticate via OAuth, so if you already subscribe to ChatGPT or Google AI you pay nothing extra — no API keys required.
-
----
-
-## Recent Updates
-
-| Version | What shipped |
-|---------|-------------|
-| **9.5–9.6** | **Context awareness** — workflow-aware warnings at 65/75/80% with phase-specific advice. **Polished statusline** — gradient bar, active agent name, auto-compact indicators (⚠/💀). **Session handoff** — `.octo-continue.md` preserves multi-LLM workflow state across sessions. **Smart router renamed** `/octo:auto`. **Intent pre-loading** — high-confidence prompts inject persona context before workflow starts. |
-| **9.0–9.4** | **92% fewer subshell forks** (9.4) — two rounds cut orchestrate.sh from ~900 forks/workflow to ~70. **Four-way debates** — Sonnet joins as permanent 4th participant. **Auto code review** after dev workflows. **claude-mem integration** — persistent cross-session memory. **Monolith decomposition** — 7 modules extracted to lib/. |
-| **8.55** | **Smart router v2.0** — just say what you need and `/octo:auto` routes to the right workflow. 17 supported workflows, learns your preferences over time |
-| **8.54** | **Multi-agentic research** — `/octo:research` now runs perspectives in parallel with configurable intensity (Quick / Standard / Deep) |
-| **8.53** | **Agent resume + custom agents** — `/octo:resume` continues previous agents, drop your own agents in `~/.claude/agents/` |
-| **8.50** | **Multi-LLM code review** — 4-agent fleet (Codex logic + Gemini security + Claude architecture + Perplexity CVE), inline PR comments |
-| **8.45** | **Reaction engine** — auto-responds to CI failures, review comments, and stuck agents without manual intervention |
-| **8.44** | **Parallel workstreams** — `/octo:parallel` runs tasks in isolated git worktrees, each with its own agent |
-
-[Full changelog](CHANGELOG.md)
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/image?repos=nyldn/claude-octopus&type=date&legend=top-left)](https://www.star-history.com/?repos=nyldn%2Fclaude-octopus&type=date&legend=top-left)
+💰 **Five providers cost nothing extra.** Codex and Gemini use OAuth (included with subscriptions). Qwen has 1,000-2,000 free requests/day. Copilot uses your GitHub subscription. Ollama runs locally for free.
 
 ---
+
+## What's New
+
+| Version | Best Features |
+|---------|--------------|
+| **v9** (current) | Up to 8 providers (Codex, Gemini, Copilot, Qwen, Ollama, Perplexity, OpenRouter, OpenCode). Four-way AI debates. Smart router — just say what you need. Discipline mode with 8 auto-invoke gates. Two-stage review. Circuit breakers with automatic provider recovery. Cursor + OpenCode + Codex cross-compatibility. Token compression: `bin/octo-compress` pipe + auto PostToolUse hook save ~7,300 tokens/session. PostCompact context recovery. `bin/octopus` CLI. 122 CC feature flags through v2.1.91. |
+| **v8** | Multi-LLM code review with inline PR comments. Parallel workstreams in isolated git worktrees. Reaction engine — auto-responds to CI failures. 32 specialized personas. Dark Factory autonomous pipeline. |
+| **v7** | Double Diamond workflow. Multi-provider dispatch. Quality gates and consensus scoring. Configurable sandbox modes. |
+
+[Full changelog →](CHANGELOG.md)
 
 ## Quickstart
 
-**Step 1 — Add the marketplace** (run in your terminal, not inside a Claude Code session):
-
 ```bash
+# Terminal (not inside a Claude Code session):
 claude plugin marketplace add https://github.com/nyldn/claude-octopus.git
-```
-
-**Step 2 — Install the plugin:**
-
-```bash
 claude plugin install octo@nyldn-plugins
-```
 
-**Step 3 — Run setup** (inside a Claude Code session):
-
-```
+# Then inside Claude Code:
 /octo:setup
 ```
 
-Setup detects installed providers, shows what's missing, and walks you through configuration. You need **zero** external providers to start — Claude is built in. Add Codex or Gemini for multi-AI features.
-
-**Or from the Claude Code UI:** Type `/plugin` in a Claude Code session, go to the **Marketplace** tab, and install **octo**.
-
-> **Note:** `/plugin` inside a session opens an interactive UI — it does not accept subcommands. Use the terminal CLI (`claude plugin ...`) for scripted installs.
+That's it. Setup detects installed providers, shows what's missing, and walks you through configuration. You need **zero** external providers to start — Claude is built in.
 
 <details>
-<summary>Factory AI (Droid)</summary>
+<summary>Install for Codex CLI</summary>
 
+```bash
+git clone --depth 1 https://github.com/nyldn/claude-octopus.git ~/.codex/claude-octopus && mkdir -p ~/.agents/skills && ln -sf ~/.codex/claude-octopus/skills ~/.agents/skills/claude-octopus
+```
+
+Restart Codex. Skills appear automatically — invoke with `$skill-doctor`, `$skill-debug`, etc.
+</details>
+
+<details>
+<summary>Install for Cursor IDE</summary>
+
+Cursor uses Octopus as an **MCP server** (not a plugin — Cursor doesn't have Claude Code's plugin system). You get MCP tools like `octopus_discover`, `octopus_review`, etc. instead of `/octo:*` slash commands.
+
+> **Important:** Just cloning the repo is not enough. You must complete all three steps below — install dependencies and configure the MCP server — for Cursor to pick up Octopus tools.
+
+```bash
+# 1. Clone the repo
+git clone --depth 1 https://github.com/nyldn/claude-octopus.git ~/.cursor/claude-octopus
+
+# 2. Install MCP server dependencies
+cd ~/.cursor/claude-octopus/mcp-server && npm install
+
+# 3. Configure Cursor — add to ~/.cursor/mcp.json (global) or .cursor/mcp.json (per-project):
+```
+
+```json
+{
+  "mcpServers": {
+    "claude-octopus": {
+      "command": "npx",
+      "args": ["tsx", "${userHome}/.cursor/claude-octopus/mcp-server/src/index.ts"],
+      "env": {
+        "OCTO_CLAW_ENABLED": "true",
+        "OPENAI_API_KEY": "${env:OPENAI_API_KEY}",
+        "GEMINI_API_KEY": "${env:GEMINI_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Restart Cursor. Tools appear in Cursor's AI chat — invoke by asking e.g. "use octopus_discover to research X".
+
+<details>
+<summary>Using Cursor on WSL?</summary>
+
+If you're running Cursor on Windows with WSL, clone the repo inside WSL and point the MCP config through `wsl.exe`:
+
+```json
+{
+  "mcpServers": {
+    "claude-octopus": {
+      "command": "wsl",
+      "args": ["npx", "tsx", "/home/<user>/.cursor/claude-octopus/mcp-server/src/index.ts"],
+      "env": {
+        "OPENAI_API_KEY": "${env:OPENAI_API_KEY}",
+        "GEMINI_API_KEY": "${env:GEMINI_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Replace `<user>` with your WSL username. Make sure `node` and `npm` are installed inside WSL.
+</details>
+
+See [docs/IDE-INTEGRATION.md](docs/IDE-INTEGRATION.md) for the full guide including `ide-attach.sh` auto-setup.
+</details>
+
+<details>
+<summary>Install for OpenCode</summary>
+
+```bash
+git clone --depth 1 https://github.com/nyldn/claude-octopus.git ~/.opencode/claude-octopus
+mkdir -p ~/.agents/skills
+ln -s ~/.opencode/claude-octopus/skills ~/.agents/skills/claude-octopus
+```
+</details>
+
+<details>
+<summary>Other install methods (Claude Code)</summary>
+
+**From the Claude Code UI:** Type `/plugin` in a session → **Marketplace** tab → install **octo**.
+
+**Factory AI (Droid):**
 ```bash
 droid plugin marketplace add https://github.com/nyldn/claude-octopus
 droid plugin install octo@claude-octopus
 ```
-
-See [docs/FACTORY-AI.md](docs/FACTORY-AI.md) for full Factory AI setup instructions.
 </details>
 
-**To update** (run in your terminal, not inside a Claude Code session):
-```bash
-claude plugin update octo
-```
+<details>
+<summary>Update / Troubleshooting</summary>
 
-If that fails (older installs used a different name), do a clean reinstall:
 ```bash
+# Update
+claude plugin marketplace update https://github.com/nyldn/claude-octopus.git
+claude plugin update octo
+
+# Clean reinstall (if update fails)
 claude plugin uninstall claude-octopus 2>/dev/null
 claude plugin uninstall octo 2>/dev/null
 rm -rf ~/.claude/plugins/cache/nyldn-plugins/claude-octopus
+claude plugin marketplace remove https://github.com/nyldn/claude-octopus.git
 claude plugin marketplace add https://github.com/nyldn/claude-octopus.git
 claude plugin install octo@nyldn-plugins
 ```
+</details>
 
 ---
 
-## Top 8 Tentacles
+## 8 Commands That Matter Most
 
 🐙 Eight commands — one per arm. *A real octopus has eight arms, each with its own neurons that can act independently.* These eight tentacles work the same way: each orchestrates up to three AI providers, applies quality gates, and produces a deliverable.
 
@@ -118,7 +182,7 @@ claude plugin install octo@nyldn-plugins
 /octo:prd mobile checkout redesign          # AI-optimized PRD with 100-point scoring
 ```
 
-Plus 30 more: review, debug, extract, deck, docs, schedule, parallel, sentinel, brainstorm, claw, doctor, and [the full set](docs/COMMAND-REFERENCE.md).
+Plus 30+ more: review, debug, extract, deck, docs, schedule, parallel, sentinel, optimize, brainstorm, claw, doctor, and [the full set](docs/COMMAND-REFERENCE.md).
 
 Don't remember the command name? Just describe what you need:
 
@@ -132,7 +196,7 @@ The smart router parses your intent and selects the right workflow.
 
 ---
 
-## Which Tentacle?
+## Pick a Command by Goal
 
 Not sure which command to use? Pick by goal:
 
@@ -148,17 +212,35 @@ Not sure which command to use? Pick by goal:
 | Write a product spec | `/octo:prd` |
 | Go from spec to shipping code | `/octo:factory` |
 | Debug a tricky issue | `/octo:debug` |
+| Reduce token usage | `/octo:doctor` (includes RTK install + token tips) |
 | Just run something quick | `/octo:quick` |
 
 Or skip the table — type `/octo:auto <what you want>` or just say `octo <what you want>`, and the smart router picks for you. 🔍
+
+<details>
+<summary><strong>How does this compare to Superpowers or plain Claude Code?</strong></summary>
+
+| | Claude Code alone | [Superpowers](https://github.com/obra/superpowers) | Claude Octopus |
+|---|---|---|---|
+| **Core idea** | One model, your prompts | Structured methodology for one agent | Up to 8 providers cross-checking each other |
+| **Providers** | Claude only | Claude only | Codex, Gemini, Copilot, Qwen, Ollama, Perplexity, OpenRouter, OpenCode |
+| **Workflow** | Ad-hoc | Spec → plan → subagent-driven dev | Discover → Define → Develop → Deliver (Double Diamond) |
+| **Strength** | Simple, no setup | Long autonomous runs with discipline | Multiple perspectives catching blind spots |
+| **Consensus gates** | No | No | Yes — 75% agreement threshold |
+| **Best for** | Quick tasks, simple features | Large builds with clear specs | Research, review, debates, multi-provider validation |
+| **Setup** | Nothing | Install plugin | Install plugin, optionally add providers |
+
+**tl;dr:** Superpowers makes one agent work really well for hours. Octopus makes multiple agents check each other's work. They solve different problems.
+
+</details>
 
 ---
 
 ## How It Works
 
-### Five Providers, One Workflow
+### How 8 Providers Work Together
 
-Claude Octopus coordinates up to five AI providers across every workflow:
+Claude Octopus coordinates up to eight AI providers — one per tentacle:
 
 | Provider | Role |
 |----------|------|
@@ -166,11 +248,14 @@ Claude Octopus coordinates up to five AI providers across every workflow:
 | 🟡 Gemini (Google) | Ecosystem breadth — alternatives, security review, research synthesis |
 | 🟣 Perplexity | Live web search — CVE lookups, dependency research, current docs |
 | 🌐 OpenRouter | Alternative model routing — access 100+ models via single API |
+| 🟢 Copilot (GitHub) | Zero-cost research — uses existing GitHub Copilot subscription |
+| 🟤 Qwen (Alibaba) | Free-tier research — 1,000-2,000 requests/day via Qwen OAuth |
+| ⚫ Ollama (Local) | Zero-cost local LLM — offline, privacy-sensitive, fallback |
 | 🔵 Claude (Anthropic) | Orchestration — quality gates, consensus building, final synthesis |
 
 Providers run in parallel for research, sequentially for problem scoping, and adversarially for review. A 75% consensus quality gate prevents questionable work from shipping. Only Claude is required — all others are optional and auto-detected.
 
-### Double Diamond Phases
+### Four Phases: Discover, Define, Develop, Deliver
 
 Four structured phases adapted from the UK Design Council's methodology:
 
@@ -183,15 +268,15 @@ Four structured phases adapted from the UK Design Council's methodology:
 
 Run phases individually or all four with `/octo:embrace`. Configure autonomy: supervised (approve each phase), semi-autonomous (intervene on failures), or autonomous (run all four).
 
-### 32 Personas
+### 32 Specialist Personas
 
 Specialized agents that activate automatically based on your request. When you say "audit my API for vulnerabilities," security-auditor activates. When you say "design a dashboard," ui-ux-designer takes over.
 
 Categories: Software Engineering (11), Specialized Development (6), Documentation & Communication (5), Research & Strategy (3), Business & Compliance (3), Creative & Design (4).
 
-[Full persona reference](docs/AGENTS.md) | [All 50 skills](docs/COMMAND-REFERENCE.md)
+[Full persona reference](docs/AGENTS.md) | [All 51 skills](docs/COMMAND-REFERENCE.md)
 
-### Reaction Engine
+### Built-in Reaction Engine
 
 When agents create PRs, the reaction engine monitors what happens next — CI failures, review comments, stale agents — and responds automatically. No new commands to learn. It fires transparently inside workflows you already use:
 
@@ -224,7 +309,7 @@ Reactions track 13 agent lifecycle states: `running` → `pr_open` → `ci_pendi
 
 ---
 
-## Providers and Cost
+## Providers and What They Cost
 
 ### Authentication
 
@@ -235,27 +320,25 @@ Reactions track 13 agent lifecycle states: `running` → `pr_open` → `ci_pendi
 
 OAuth users pay nothing beyond their existing subscriptions.
 
-### What Works Without External Providers
+### What You Get With Just Claude
 
 Everything except multi-AI features. You get all 32 personas, structured workflows, smart routing, context detection, and every skill. Multi-AI orchestration (parallel analysis, debate, consensus) activates when external providers are configured.
 
 ---
 
-## Trust and Safety
+## Trust, Safety, and Limits
 
 **Namespace isolation** — Only `/octo:*` commands and `octo` natural language prefix activate the plugin. Your existing Claude Code setup is untouched.
 
 **Data locations** — Results in `~/.claude-octopus/results/`, logs in `~/.claude-octopus/logs/`, project state in `.octo/`. Nothing hidden.
 
-**No telemetry** — No usage data collected. No phone-home. Fully open source.
-
-**Provider transparency** — Visual indicators (colored dots) show exactly which providers are running and when external APIs are called. You always know what's happening.
+**Provider transparency** — Every command shows a 🐙 activation indicator on launch. Colored dots (🔴 🟡 🟣 🔵) show exactly which providers are running and when external APIs are called. You always know what's happening.
 
 **Clean uninstall** — Run `claude plugin uninstall octo` from your terminal. If you see a scope error, add `--scope project`. No residual config changes.
 
 ---
 
-## OpenClaw Compatibility
+## Works With OpenClaw
 
 Claude Octopus ships with a compatibility layer for [OpenClaw](https://github.com/openclaw/openclaw), the open-source AI assistant framework. This lets you expose Octopus workflows to messaging platforms (Telegram, Discord, Signal, WhatsApp) without modifying the Claude Code plugin.
 
@@ -278,7 +361,26 @@ Three components, zero changes to the core plugin:
 
 ### MCP Server
 
-The MCP server auto-starts when the plugin is enabled (via `.mcp.json`). It exposes:
+The MCP server is **opt-in** — it does not start automatically. This prevents a permanent `✘ failed` status in Claude Code's `/mcp` panel for users who don't need it.
+
+To enable it, add the server to your project's `.mcp.json` or global Claude Code settings:
+
+```json
+{
+  "mcpServers": {
+    "octo-claw": {
+      "command": "node",
+      "args": ["--require", "./mcp-server/check-node-version.js", "./mcp-server/dist/index.js"],
+      "cwd": "<path-to-claude-octopus>",
+      "env": {
+        "OCTO_CLAW_ENABLED": "true"
+      }
+    }
+  }
+}
+```
+
+Once enabled, it exposes:
 
 - `octopus_discover`, `octopus_define`, `octopus_develop`, `octopus_deliver` — Individual phases
 - `octopus_embrace` — Full Double Diamond workflow
@@ -327,6 +429,25 @@ The workflow continues with available providers. You'll see the status in the vi
 **Why "octopus"?**
 🐙 *Fun fact: a real octopus has three hearts, blue blood, and 500 million neurons — two-thirds of which live in its eight arms.* Each arm can taste, touch, and act independently. Claude Octopus works the same way: each tentacle (command) operates autonomously with its own squeeze of logic, then ink flows back as the final deliverable. The crossfire review? That's the squeeze — adversarial pressure that untangles everything before it ships.
 
+**How do I debug when something goes wrong?**
+Run commands with the `--verbose` flag to get detailed debugging output. Logs are stored in `~/.claude-octopus/logs/` for inspection. You can also use `/octo:doctor` to run diagnostics and identify potential issues.
+
+---
+
+## Community
+
+Join [r/ClaudeOctopus](https://www.reddit.com/r/ClaudeOctopus/) for help, workflow tips, showcases, and updates.
+
+[![Star History Chart](https://api.star-history.com/image?repos=nyldn/claude-octopus&type=date&legend=top-left)](https://www.star-history.com/?repos=nyldn%2Fclaude-octopus&type=date&legend=top-left)
+
+### Contributing
+
+1. [Report issues](https://github.com/nyldn/claude-octopus/issues)
+2. Submit PRs following existing code style
+3. `git clone https://github.com/nyldn/claude-octopus.git && make test`
+
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for details.
+
 ---
 
 ## Documentation
@@ -345,23 +466,9 @@ The workflow continues with available providers. You'll see the status in the vi
 ## Attribution
 
 - **[wolverin0/claude-skills](https://github.com/wolverin0/claude-skills)** — AI Debate Hub. MIT License.
-- **[obra/superpowers](https://github.com/obra/superpowers)** — Discipline skills patterns. MIT License.
+- **[obra/superpowers](https://github.com/obra/superpowers)** — Discipline skills patterns, verification-before-completion philosophy, two-stage review approach, and review response patterns. MIT License.
 - **[nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)** — BM25 design intelligence databases. MIT License.
 - **[UK Design Council](https://www.designcouncil.org.uk/our-resources/the-double-diamond/)** — Double Diamond methodology.
-
----
-
-## Community
-
-Join [r/ClaudeOctopus](https://www.reddit.com/r/ClaudeOctopus/) for help, workflow tips, showcases, and updates.
-
-## Contributing
-
-1. [Report issues](https://github.com/nyldn/claude-octopus/issues)
-2. Submit PRs following existing code style
-3. `git clone https://github.com/nyldn/claude-octopus.git && make test`
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ---
 

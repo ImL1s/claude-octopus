@@ -66,6 +66,49 @@ check_deps() {
         missing+=("gemini:Gemini CLI — npm install -g @google/gemini-cli")
     fi
 
+    # Ollama (optional — local LLM)
+    if has_cmd ollama; then
+        if curl -sf http://localhost:11434/api/tags &>/dev/null; then
+            ok+=("ollama:Ollama installed and running")
+        else
+            warnings+=("ollama_stopped:Ollama installed but server not running — run: ollama serve")
+        fi
+    else
+        warnings+=("ollama:Ollama not installed (optional) — brew install ollama for zero-cost local LLM")
+    fi
+
+    # GitHub Copilot CLI (optional — zero additional cost)
+    if has_cmd copilot; then
+        ok+=("copilot:Copilot CLI installed")
+    else
+        warnings+=("copilot:Copilot CLI not installed (optional) — brew install copilot-cli for zero-cost research")
+    fi
+
+    # Qwen CLI (optional — free tier)
+    if has_cmd qwen; then
+        ok+=("qwen:Qwen CLI installed")
+    else
+        warnings+=("qwen:Qwen CLI not installed (optional) — npm install -g @qwen-code/qwen-code for free-tier research")
+    fi
+
+    # RTK (optional — bash output compression)
+    if has_cmd rtk; then
+        local rtk_ver
+        rtk_ver=$(rtk --version 2>/dev/null | head -1) || rtk_ver="unknown"
+        local rtk_hook="no"
+        local settings_file="${HOME}/.claude/settings.json"
+        if [[ -f "$settings_file" ]] && grep -q 'rtk' "$settings_file" 2>/dev/null; then
+            rtk_hook="yes"
+        fi
+        if [[ "$rtk_hook" == "yes" ]]; then
+            ok+=("rtk:RTK ${rtk_ver} installed, hook active (bash output compression enabled)")
+        else
+            warnings+=("rtk:RTK ${rtk_ver} installed but Claude Code hook not configured. Run: rtk init -g")
+        fi
+    else
+        warnings+=("rtk:RTK not installed (optional) — saves 60-90% tokens on bash output. Install: brew install rtk && rtk init -g. Run /octo:doctor for guided setup.")
+    fi
+
     # Statusline resolver
     local resolver="$HOME/.claude-octopus/statusline.sh"
     if [[ -f "$resolver" ]]; then

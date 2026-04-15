@@ -68,28 +68,29 @@ json.dump(p, open('package.json', 'w'), indent=2)
 print('   package.json')
 "
 
-# plugin.json
+# plugin.json — strip old version prefix, prepend new one from version field
 python3 -c "
-import json
+import json, re
 p = json.load(open('.claude-plugin/plugin.json'))
 p['version'] = '${VERSION}'
-p['description'] = p['description'].replace('(v${CURRENT})', '(v${VERSION})')
-if '(v${VERSION})' not in p['description']:
-    # Fallback: replace first version-like pattern
-    import re
-    p['description'] = re.sub(r'\(v\d+\.\d+\.\d+\)', '(v${VERSION})', p['description'], count=1)
+# Strip any existing version prefix, then prepend the new one
+desc = re.sub(r'^v\d+\.\d+\.\d+\s*[\u2014\-]\s*', '', p['description'])
+p['description'] = 'v${VERSION} \u2014 ' + desc
 json.dump(p, open('.claude-plugin/plugin.json', 'w'), indent=2)
 print('   .claude-plugin/plugin.json')
 "
 
-# marketplace.json
+# marketplace.json — strip old version prefix, prepend new one
 python3 -c "
-import json
+import json, re
 m = json.load(open('.claude-plugin/marketplace.json'))
 for plugin in m.get('plugins', []):
     if plugin.get('name') == 'octo':
         plugin['version'] = '${VERSION}'
-        plugin['description'] = 'v${VERSION} - ${SUMMARY}. ' + plugin['description'].split('. ', 1)[-1] if '. ' in plugin['description'] else 'v${VERSION} - ${SUMMARY}.'
+        # Strip any existing version prefix, then prepend the new one
+        desc = re.sub(r'^v\d+\.\d+\.\d+\s*[\-\u2014]\s*', '', plugin['description'])
+        plugin['description'] = 'v${VERSION} - ' + desc
+m['metadata']['version'] = '${VERSION}'
 json.dump(m, open('.claude-plugin/marketplace.json', 'w'), indent=2)
 print('   .claude-plugin/marketplace.json')
 "

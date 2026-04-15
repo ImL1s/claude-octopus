@@ -1,287 +1,209 @@
 ---
 command: setup
-description: Check Claude Octopus setup status and get configuration instructions
+description: Interactive setup wizard — install providers, configure auth, RTK, token optimization
 aliases:
   - sys-setup
+allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion
 ---
 
 # Claude Octopus Setup
 
-This command checks your current setup and provides instructions for any missing dependencies.
+**Your first output line MUST be:** `🐙 Octopus Setup`
 
-## Dependency Check
+Interactive setup wizard. Detects what's installed, offers to install what's missing, configures auth, and optimizes token usage.
 
-First, check all software dependencies (CLIs, statusline, recommended plugins):
+**This command auto-runs on first install** (via SessionStart hook). It also runs when users invoke `/octo:setup` manually.
 
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/install-deps.sh check
-```
+**CRITICAL: This command MUST always run its interactive flow when invoked.** Never silently dismiss the user. Never say "you're already set up" without showing the dashboard and offering choices via AskUserQuestion. Even if everything is configured, the user invoked this command for a reason — show them their status and ask what they want to do.
 
-If dependencies are missing, install them:
+## STEP 1: Detect Current State
 
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/install-deps.sh install
-```
-
-**Note:** Plugin installs (claude-mem, document-skills) can't be auto-installed via script. The install command above will print `/plugin install` commands — copy and paste them to install.
-
-## Provider Detection
-
-Running provider detection...
+Run a SINGLE comprehensive check:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh detect-providers
+echo "=== Provider Detection ==="
+printf "codex:%s\n" "$(command -v codex >/dev/null 2>&1 && echo installed || echo missing)"
+printf "codex_auth:%s\n" "$(codex --version >/dev/null 2>&1 && echo ok || echo none)"
+printf "gemini:%s\n" "$(command -v gemini >/dev/null 2>&1 && echo installed || echo missing)"
+printf "perplexity:%s\n" "$([ -n "${PERPLEXITY_API_KEY:-}" ] && echo configured || echo missing)"
+printf "copilot:%s\n" "$(command -v copilot >/dev/null 2>&1 && echo installed || echo missing)"
+printf "qwen:%s\n" "$(command -v qwen >/dev/null 2>&1 && echo installed || echo missing)"
+printf "ollama:%s\n" "$(command -v ollama >/dev/null 2>&1 && curl -sf http://localhost:11434/api/tags >/dev/null 2>&1 && echo running || command -v ollama >/dev/null 2>&1 && echo installed || echo missing)"
+printf "opencode:%s\n" "$(command -v opencode >/dev/null 2>&1 && echo installed || echo missing)"
+echo "=== Token Optimization ==="
+printf "rtk:%s\n" "$(command -v rtk >/dev/null 2>&1 && echo "installed $(rtk --version 2>&1 | head -1)" || echo missing)"
+printf "rtk_hook:%s\n" "$(grep -q 'rtk' "${HOME}/.claude/settings.json" 2>/dev/null && echo active || echo missing)"
+printf "octo_compress:%s\n" "$(command -v octo-compress >/dev/null 2>&1 && echo available || echo missing)"
+echo "=== System ==="
+printf "node:%s\n" "$(node --version 2>/dev/null || echo missing)"
+printf "jq:%s\n" "$(command -v jq >/dev/null 2>&1 && echo installed || echo missing)"
+printf "os:%s\n" "$(uname -s)"
 ```
 
-Based on the results above, here's what you need:
+## STEP 2: Display Status Summary
 
-## If You See: CODEX_STATUS=missing
+Show a compact table:
 
-Install Codex CLI:
+```
+🐙 Octopus Setup
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Providers:
+  🔴 Codex CLI:     [Installed ✓ / Missing ✗]
+  🟡 Gemini CLI:    [Installed ✓ / Missing ✗]
+  🟣 Perplexity:    [Configured ✓ / Not set ✗]
+  🟢 Copilot CLI:   [Installed ✓ / Not installed]
+  🟠 Qwen CLI:      [Installed ✓ / Not installed]
+  🟤 OpenCode:      [Installed ✓ / Not installed]
+  ��� Ollama:        [Running ✓ / Installed / Not installed]
+  🔵 Claude:        Available ✓
+
+Token Optimization:
+  RTK:              [Installed + Hook active ✓ / Installed ✓ / Missing ✗]
+  octo-compress:    [Available ✓ / Not in PATH]
+```
+
+## STEP 3: Interactive Menu (ALWAYS show — even for returning users)
+
+**Always present this menu after the dashboard, regardless of current setup state:**
+
+```javascript
+AskUserQuestion({
+  questions: [{
+    question: "What would you like to do?",
+    header: "Setup",
+    multiSelect: false,
+    options: [
+      {label: "Add or configure a provider", description: "Install Codex, Gemini, Perplexity, Copilot, Qwen, or OpenCode"},
+      {label: "Configure models", description: "Set which models are used for each workflow phase → launches /octo:model-config"},
+      {label: "Set up token optimization (RTK)", description: "Install RTK for 60-90% token savings on bash output"},
+      {label: "Change work mode", description: "Switch between Dev mode and Knowledge Work mode"},
+      {label: "Fine-tune preferences", description: "Banner verbosity, telemetry, cost mode"},
+      {label: "Troubleshoot an issue", description: "Diagnose a problem → launches /octo:doctor"},
+      {label: "Done — everything looks good", description: "Exit setup"}
+    ]
+  }]
+})
+```
+
+Route based on selection:
+- **Add or configure a provider** → Continue to the provider install flow below
+- **Configure models** → Invoke `/octo:model-config` (the interactive model config wizard)
+- **Set up RTK** → Jump to the RTK section below
+- **Change work mode** → Jump to the Work Mode section (STEP 4)
+- **Fine-tune preferences** → Jump to the Fine-tune section (STEP 5)
+- **Troubleshoot** → Suggest `/octo:doctor`
+- **Done** → Show "Run /octo:setup anytime to change these settings" and exit
+
+## STEP 3a: Provider Install (if selected above, or if core providers are missing on first run)
+
+**If core providers are missing (Codex/Gemini):**
+
+```javascript
+AskUserQuestion({
+  questions: [{
+    question: "Which providers do you want to install?",
+    header: "Providers",
+    multiSelect: true,
+    options: [
+      {label: "Codex CLI (Recommended)", description: "npm install -g @openai/codex — OpenAI's coding agent"},
+      {label: "Gemini CLI", description: "brew install gemini-cli — Google's research agent"},
+      {label: "Skip", description: "Continue with what's already installed"}
+    ]
+  }]
+})
+```
+
+Execute installs for each selected option. After install, offer auth:
+
+```javascript
+AskUserQuestion({
+  questions: [{
+    question: "How do you want to authenticate Codex?",
+    header: "Codex Auth",
+    multiSelect: false,
+    options: [
+      {label: "OAuth login (Recommended)", description: "codex login — opens browser, no API key needed"},
+      {label: "API key", description: "I'll set OPENAI_API_KEY manually"},
+      {label: "Skip", description: "I'll configure auth later"}
+    ]
+  }]
+})
+```
+
+If user chooses OAuth, tell them to run `! codex login` (the `!` prefix runs it in this session).
+
+**If RTK is missing:**
+
+```javascript
+AskUserQuestion({
+  questions: [{
+    question: "RTK saves 60-90% on bash output tokens. Install it?",
+    header: "RTK",
+    multiSelect: false,
+    options: [
+      {label: "Install via brew (Recommended)", description: "brew install rtk — fast, macOS"},
+      {label: "Install via cargo", description: "cargo install --git https://github.com/rtk-ai/rtk"},
+      {label: "Skip", description: "Continue without RTK"}
+    ]
+  }]
+})
+```
+
+After install, auto-configure the hook: `rtk init -g`, then add the PreToolUse hook to settings.json.
+
+**If RTK is installed but hook not active:**
+
+Offer `rtk init -g` directly.
+
+## STEP 4: Work Mode Selection
+
+```javascript
+AskUserQuestion({
+  questions: [{
+    question: "What kind of work will you primarily do?",
+    header: "Work Mode",
+    multiSelect: false,
+    options: [
+      {label: "Dev Work (Default)", description: "Software development — building, debugging, reviewing code"},
+      {label: "Knowledge Work", description: "Research, analysis, writing, strategy — recommends document-skills plugin"},
+      {label: "Both", description: "I'll switch between them"}
+    ]
+  }]
+})
+```
+
+If Knowledge Work selected, offer to install document-skills plugin.
+
+## STEP 5: Verify & Summarize
+
+Re-run provider detection to confirm everything works:
+
 ```bash
-npm install -g @openai/codex
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh detect-providers
 ```
 
-Then configure authentication:
-```bash
-# Option 1: OAuth (recommended)
-codex login
+Show final summary:
 
-# Option 2: API Key
-export OPENAI_API_KEY="sk-..."
-# Get key from: https://platform.openai.com/api-keys
+```
+✅ Setup Complete!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Providers: X active (Codex, Gemini, ...)
+RTK: [Active / Not installed]
+Mode: [Dev / Knowledge / Both]
+
+Quick start:
+  Just describe what you need — "research X", "build Y", "review Z"
+  Or use /octo:auto for the smart router
+  Run /octo:doctor anytime for diagnostics
 ```
 
-To make the API key permanent, add it to your shell profile:
-```bash
-# For zsh (macOS default)
-echo 'export OPENAI_API_KEY="sk-..."' >> ~/.zshrc
-source ~/.zshrc
-
-# For bash
-echo 'export OPENAI_API_KEY="sk-..."' >> ~/.bashrc
-source ~/.bashrc
-```
-
-## If You See: GEMINI_STATUS=missing
-
-Install Gemini CLI:
-```bash
-npm install -g @google/gemini-cli
-```
-
-Then configure authentication:
-```bash
-# Option 1: OAuth (recommended)
-gemini  # Opens browser for OAuth
-
-# Option 2: API Key
-export GEMINI_API_KEY="AIza..."
-# Get key from: https://aistudio.google.com/app/apikey
-```
-
-To make the API key permanent, add it to your shell profile:
-```bash
-# For zsh (macOS default)
-echo 'export GEMINI_API_KEY="AIza..."' >> ~/.zshrc
-source ~/.zshrc
-
-# For bash
-echo 'export GEMINI_API_KEY="AIza..."' >> ~/.bashrc
-source ~/.bashrc
-```
-
-## Optional: Add Perplexity for Web Search
-
-Perplexity adds live web search to research workflows. When configured, discover/probe phases automatically include a web-grounded research agent with source citations.
-
-```bash
-export PERPLEXITY_API_KEY="pplx-..."
-# Get key from: https://www.perplexity.ai/settings/api
-```
-
-To make the API key permanent, add it to your shell profile:
-```bash
-# For zsh (macOS default)
-echo 'export PERPLEXITY_API_KEY="pplx-..."' >> ~/.zshrc
-source ~/.zshrc
-
-# For bash
-echo 'export PERPLEXITY_API_KEY="pplx-..."' >> ~/.bashrc
-source ~/.bashrc
-```
-
-**Note:** Perplexity is fully optional. All workflows work without it. It simply adds an extra web search perspective (~$0.01-0.05/query).
-
-## If You See: CODEX_AUTH=none or GEMINI_AUTH=none
-
-The CLI is installed but not authenticated. Configure authentication:
-
-**For Codex:**
-```bash
-# Option 1: OAuth
-codex login
-
-# Option 2: API Key
-export OPENAI_API_KEY="sk-..."
-```
-
-**For Gemini:**
-```bash
-# Option 1: OAuth
-gemini
-
-# Option 2: API Key
-export GEMINI_API_KEY="AIza..."
-```
-
-## Verify Setup
-
-After installing and configuring, verify with:
-```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh detect-providers
-```
-
-You should see at least one provider with status:
-- ✓ Codex: Installed and authenticated (oauth or api-key)
-- ✓ Gemini: Installed and authenticated (oauth or api-key)
-- ✓ Perplexity: Configured (api-key) — optional, adds web search
-
-### Quick Auth Check (Claude Code v2.1.41+)
-
-If you have Claude Code v2.1.41+, you can also verify Claude's own auth status:
-```bash
-claude auth status
-```
-
-This confirms your Claude session is active and authenticated. Octopus uses this for reliable provider detection when available.
-
-## Ready to Use
-
-Once at least ONE provider is configured, you're ready! Claude Octopus automatically activates when you need multi-AI collaboration.
-
-### Just Talk Naturally
-
-You don't need to run commands - just describe what you want in plain English:
-
-**Research & Exploration:**
-> "Research OAuth authentication patterns and summarize the best approaches"
-> "Explore different database architectures for a multi-tenant SaaS application"
-> "Investigate the trade-offs between REST and GraphQL for our API"
-
-**Implementation & Development:**
-> "Build a user authentication system with JWT tokens"
-> "Implement a rate limiting middleware for Express"
-> "Create a responsive navigation component in React"
-
-**Code Review & Quality:**
-> "Review this authentication code for security vulnerabilities"
-> "Check this API implementation for performance issues"
-> "Validate that this component follows accessibility best practices"
-
-**Adversarial Testing:**
-> "Use adversarial review to critique my password reset implementation"
-> "Have two models debate the best approach for session management"
-> "Red team this login form to find security weaknesses"
-
-**Full Workflows:**
-> "Research, design, and implement a complete user dashboard feature"
-> "Build a notification system from research to delivery"
-
-Claude coordinates multiple AI models behind the scenes and provides comprehensive, validated results.
-
-## Choosing Your Work Mode
-
-Claude Octopus has two work modes optimized for different tasks. Both use the same AI providers (Codex + Gemini) but with different personas:
-
-### Dev Work Mode 🔧 (Default)
-**Best for:** Building features, debugging code, implementing APIs
-
-Switch to Dev mode:
-```
-/octo:dev
-```
-
-### Knowledge Work Mode 🎓
-**Best for:** User research, strategy analysis, literature reviews
-
-Switch to Knowledge mode:
-```
-/octo:km on
-```
-
-**For Knowledge Work, we recommend installing document-skills:**
-```
-/plugin install document-skills@anthropic-agent-skills
-```
-
-This adds support for PDF analysis, DOCX/PPTX/XLSX generation, and professional document export.
-
-**Note:** The mode you choose during setup will be remembered across sessions. You can switch modes anytime using `/octo:dev` or `/octo:km on`
-
----
-
-## Do I Need Both Providers?
-
-No! You only need ONE provider (Codex or Gemini) to use Claude Octopus. Both providers give you access to powerful workflows:
-
-- **Codex (OpenAI):** Best for code generation, refactoring, complex logic
-- **Gemini (Google):** Best for analysis, long-context understanding, multi-modal tasks
-- **Perplexity (optional):** Adds live web search with citations to research workflows
-
-Having both providers enables multi-AI workflows where different models review each other's work, but a single provider works great for most tasks. Perplexity is a bonus — it grounds research in live web data.
-
-## Troubleshooting
-
-### "npm: command not found"
-
-You need Node.js and npm installed. Install from https://nodejs.org/
-
-### "Permission denied" when installing CLIs
-
-Use `sudo npm install -g` or configure npm to use a user directory:
-```bash
-mkdir ~/.npm-global
-npm config set prefix '~/.npm-global'
-echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.zshrc
-source ~/.zshrc
-```
-
-### "codex/gemini: command not found" after installation
-
-The CLI may not be in your PATH. Try:
-```bash
-# Reload your shell profile
-source ~/.zshrc  # or source ~/.bashrc
-
-# Or restart your terminal
-```
-
-### API key not persisting after terminal restart
-
-Add the export statement to your shell profile (~/.zshrc or ~/.bashrc) so it loads automatically.
-
-### Can't update or uninstall the plugin
-
-The plugin update UI is currently broken — "Failed to update: Plugin 'octo' not found" is a known issue. Manual cleanup is required:
-
-**Step 1:** Edit `~/.claude/settings.json` → remove `"octo@nyldn-plugins"` from the `enabledPlugins` array.
-
-**Step 2:** Remove plugin files:
-```bash
-rm -rf ~/.claude/plugins/octo@nyldn-plugins
-rm -rf ~/.claude/installed-plugins/octo@nyldn-plugins
-```
-
-**Step 3:** Reinstall:
-```
-/plugin marketplace add https://github.com/nyldn/claude-octopus.git
-/plugin install octo@nyldn-plugins
-```
-
-## Getting Help
-
-If you encounter issues:
-1. Run `${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh preflight` for a detailed system check
-2. Check the logs in `~/.claude-octopus/logs/`
-3. Report issues at: https://github.com/nyldn/claude-octopus/issues
+## IMPORTANT: This Replaces Passive Setup
+
+The old setup just printed instructions. This new setup:
+- Uses AskUserQuestion for every decision
+- Executes installs directly (with user consent via option selection)
+- Configures auth interactively
+- Sets up RTK + token optimization
+- Remembers preferences via auto-memory
+
+Everything `/octo:doctor` can fix, `/octo:setup` should also offer to configure on first run.

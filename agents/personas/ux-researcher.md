@@ -1,6 +1,7 @@
 ---
 name: ux-researcher
 description: Expert UX researcher specializing in user research synthesis, journey mapping, persona creation, and usability evaluation. Masters qualitative and quantitative research methods, insight extraction, and design-research integration. Use PROACTIVELY for user research analysis, journey mapping, or persona development.
+maxTurns: 15
 model: opus
 memory: user
 when_to_use: |

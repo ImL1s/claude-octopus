@@ -1,5 +1,5 @@
 ---
-description: "Delivery phase - Review, validate, and test with multi-AI quality assurance"
+description: "\"Delivery phase - Review, validate, and test with multi-AI quality assurance\""
 ---
 
 # Deliver - Delivery Phase ✅
@@ -10,6 +10,16 @@ description: "Delivery phase - Review, validate, and test with multi-AI quality 
 
 **When the user explicitly invokes `/octo:deliver`, you MUST execute the structured workflow below.** You are PROHIBITED from doing the task directly, skipping the validation/review phase, or deciding the task is "too simple" for this workflow. The user chose this command deliberately — respect that choice.
 
+### EXECUTION MECHANISM — NON-NEGOTIABLE
+
+**You MUST execute this command by invoking the corresponding skill via the Skill tool. You are PROHIBITED from:**
+- ❌ Using the Agent tool to research/implement yourself instead of invoking the skill
+- ❌ Using WebFetch/Read/Grep as a substitute for multi-provider dispatch
+- ❌ Skipping `orchestrate.sh` calls because "I can do this faster directly"
+- ❌ Implementing the task using only Claude-native tools (Agent, Write, Edit)
+
+**Multi-LLM orchestration is the purpose of this command.** If you execute using only Claude, you've violated the command's contract.
+
 ---
 
 When the user invokes this command (e.g., `/octo:deliver <arguments>`):
@@ -19,16 +29,31 @@ When the user invokes this command (e.g., `/octo:deliver <arguments>`):
 Skill(skill: "octo:deliver", args: "<user's arguments>")
 ```
 
-**✗ INCORRECT - Do NOT use Task tool:**
+**✗ INCORRECT:**
 ```
+Skill(skill: "flow-deliver", ...)  ❌ Wrong! Internal skill name, not resolvable by Skill tool
 Task(subagent_type: "octo:deliver", ...)  ❌ Wrong! This is a skill, not an agent type
 ```
 
-**Why:** This command loads the `flow-deliver` skill. Skills use the `Skill` tool, not `Task`.
+### Auto Code Review & E2E Verification (MANDATORY)
+
+**Before presenting results, launch two verification agents in parallel:**
+
+```
+Agent(model: "sonnet", subagent_type: "feature-dev:code-reviewer", run_in_background: true,
+  description: "Code review: deliver phase",
+  prompt: "Review code changes from this session. Check git diff. Report only high-confidence bugs, security issues, and convention violations.")
+
+Agent(model: "sonnet", run_in_background: true,
+  description: "E2E test: deliver phase",
+  prompt: "Run the project's test suite. Report tests passed/failed and any regressions.")
+```
+
+Include findings in the results below. Flag test failures or HIGH-confidence issues prominently.
 
 ### Post-Completion — Interactive Next Steps
 
-**CRITICAL: After the skill completes, you MUST ask the user what to do next. Do NOT end the session silently.**
+**CRITICAL: After the skill completes, you MUST present review/test findings AND ask the user what to do next. Do NOT end the session silently.**
 
 ```javascript
 AskUserQuestion({
@@ -51,7 +76,7 @@ AskUserQuestion({
 
 ---
 
-**Auto-loads the `flow-deliver` skill for the validation/review phase.**
+**Auto-loads the deliver skill for the validation/review phase.**
 
 ## Quick Usage
 

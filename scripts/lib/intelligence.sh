@@ -857,7 +857,7 @@ run_file_validation() {
 
     if [[ -n "$missing" ]]; then
         local count
-        count=$(echo "$missing" | wc -w | tr -d ' ')
+        local _mw=($missing); count=${#_mw[@]}
         log "WARN" "Agent $agent_type referenced $count nonexistent file(s): $missing" 2>/dev/null || true
     else
         log "DEBUG" "Agent $agent_type file references validated" 2>/dev/null || true
@@ -897,7 +897,7 @@ record_run_pattern() {
 
     # Extract a compact prompt signature (first 100 chars, no newlines)
     local prompt_sig
-    prompt_sig=$(echo "${prompt:0:100}" | tr '\n' ' ' | tr -d '"')
+    prompt_sig="${prompt:0:100}"; prompt_sig="${prompt_sig//$'\n'/ }"; prompt_sig="${prompt_sig//\"/}"
 
     local timestamp
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%Y-%m-%dT%H:%M:%SZ")

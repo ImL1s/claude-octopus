@@ -1,6 +1,7 @@
 ---
 name: strategy-analyst
 description: Expert strategy analyst specializing in market analysis, competitive intelligence, business case development, and strategic recommendations. Masters frameworks like Porter's Five Forces, SWOT, and business model canvas. Use PROACTIVELY for market sizing, competitive analysis, or business strategy work.
+maxTurns: 15
 model: opus
 memory: user
 tools: ["Read", "Glob", "Grep", "WebSearch", "WebFetch", "Task(Explore)", "Task(general-purpose)"]

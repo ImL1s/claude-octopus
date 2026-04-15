@@ -1,5 +1,5 @@
 ---
-description: "Design UI/UX systems with style guides, palettes, typography, and component specs"
+description: "\"Design UI/UX systems with style guides, palettes, typography, and component specs\""
 ---
 
 # /octo:design-ui-ux - UI/UX Design Workflow
@@ -24,13 +24,13 @@ Parse the user's intent to determine which mode to run:
 **For quick searches**, run the search directly:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/vendors/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py" "<query>" --domain <domain>
+python3 "${HOME}/.claude-octopus/plugin/vendors/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py" "<query>" --domain <domain>
 ```
 
 ### Step 2: Check Design Intelligence Availability
 
 ```bash
-if [ -f "${CLAUDE_PLUGIN_ROOT}/vendors/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py" ]; then
+if [ -f "${HOME}/.claude-octopus/plugin/vendors/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py" ]; then
     python3 -c "import csv, re, math" 2>/dev/null && echo "Design intelligence: ready" || echo "Design intelligence: python3 required"
 else
     echo "Design intelligence: not installed (run: git submodule update --init)"
@@ -56,11 +56,12 @@ Tools:
 
 **Quick mode**: Run search, present results, offer to expand into full design system.
 
-**Full mode**: Execute the 4-phase design workflow:
-1. Discover - Search databases, detect project context, pull Figma if available
-2. Define - Synthesize into design direction with multi-AI debate (if providers available)
-3. Develop - Generate design tokens, component specs, page layouts
-4. Deliver - Validate accessibility, create handoff specs, push to Figma if connected
+**Full mode**: Execute the design workflow:
+1. Discover - Search BM25 databases, detect project context, pull Figma if available
+2. Define - Synthesize search results into design direction (style, palette, typography, layout)
+3. Critique - Adversarial review of the design direction via Codex/Gemini (or Claude self-critique). Catches accessibility failures, impractical choices, and research blind spots before they become tokens
+4. Develop - Generate design tokens, component specs, page layouts (incorporating critique fixes)
+5. Deliver - Validate accessibility, create handoff specs, push to Figma if connected
 
 ### Step 5: Present Results
 

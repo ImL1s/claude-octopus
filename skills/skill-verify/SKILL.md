@@ -1,10 +1,12 @@
 ---
 name: skill-verify
 version: 1.0.0
-description: Evidence gate: verify before claiming success. Use when: Use when about to claim work is complete, fixed, or passing.. Auto-invoke before: commits, PRs, task completion, moving to next task.. ALWAYS use before expressing satisfaction ("Done!", "Fixed!", "All passing!").
+description: "Verify claims with actual evidence before declaring success — use to prevent false completion. Use when: Use when about to claim work is complete, fixed, or passing.. Auto-invoke before: commits, PRs, task completion, moving to next task.. ALWAYS use before expressing satisfaction (\"Done!\", \"Fixed!\", \"All passing!\")."
 ---
 
 # Verification Before Completion
+
+**Your first output line MUST be:** `🐙 **CLAUDE OCTOPUS ACTIVATED** - Verification Gate`
 
 ## The Iron Law
 
@@ -189,7 +191,7 @@ Octopus workflows have built-in quality gates:
 
 ```bash
 # Before moving from tangle → ink
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh preflight
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh preflight
 
 # Verifies:
 # - All agents completed

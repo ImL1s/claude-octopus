@@ -1,8 +1,12 @@
 ---
 name: flow-define
 version: 1.0.0
-description: Multi-AI requirements scoping using Codex and Gemini CLIs (Double Diamond Define phase). Use when: AUTOMATICALLY ACTIVATE when user requests clarification or scoping:. "define the requirements for X". "clarify the scope of Y"
+description: "Multi-AI requirements scoping using Codex and Gemini CLIs (Double Diamond Define phase). Use when: AUTOMATICALLY ACTIVATE when user requests clarification or scoping:. \"define the requirements for X\". \"clarify the scope of Y\""
 ---
+
+> This file is generated from a template. Edit the `.tmpl` file, not this file directly.
+> Run `scripts/gen-skill-docs.sh` to regenerate after changes.
+
 
 ## Pre-Definition: State Check
 
@@ -16,14 +20,14 @@ Before starting definition:
 ```bash
 # Verify Discover phase is complete
 if [[ -f ".octo/STATE.md" ]]; then
-  discover_status=$("${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" get_phase_status 1)
+  discover_status=$("${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" get_phase_status 1)
   if [[ "$discover_status" != "complete" ]]; then
     echo "⚠️ Warning: Discover phase not marked complete. Consider running discovery first."
   fi
 fi
 
 # Update state for Definition phase
-"${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_state \
+"${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_state \
   --phase 2 \
   --position "Definition" \
   --status "in_progress"
@@ -37,34 +41,38 @@ This skill uses **ENFORCED execution mode**. You MUST follow this exact sequence
 
 ### STEP 1: Display Visual Indicators (MANDATORY - BLOCKING)
 
-**Check provider availability:**
+**MANDATORY: Run the centralized provider check BEFORE displaying the banner:**
 
 ```bash
-command -v codex &> /dev/null && codex_status="Available ✓" || codex_status="Not installed ✗"
-command -v gemini &> /dev/null && gemini_status="Available ✓" || gemini_status="Not installed ✗"
+bash "${HOME}/.claude-octopus/plugin/scripts/helpers/check-providers.sh"
 ```
 
-**Display this banner BEFORE orchestrate.sh execution:**
+**Use the ACTUAL results. PROHIBITED: Showing only "🔵 Claude: Available ✓" without listing all providers.**
+
+**Validation:**
+- If ALL external CLI providers unavailable -> STOP, suggest: `/octo:setup`
+- If some unavailable -> Continue with available provider(s)
+- If multiple available -> Proceed normally
+
+**Display this banner BEFORE orchestrate.sh execution (list ALL providers from check output):**
 
 ```
 🐙 **CLAUDE OCTOPUS ACTIVATED** - Multi-provider definition mode
 🎯 Define Phase: [Brief description of what you're defining/scoping]
 
 Provider Availability:
-🔴 Codex CLI: ${codex_status} - Technical requirements analysis
-🟡 Gemini CLI: ${gemini_status} - Business context and constraints
+🔴 Codex CLI: [status from check] - Technical requirements analysis
+🟡 Gemini CLI: [status from check] - Business context and constraints
+🟢 Copilot CLI: [status from check] - GitHub integration perspective
+🟣 Qwen CLI: [status from check] - Alternative analysis
+🟤 OpenCode CLI: [status from check] - Multi-provider routing
 🔵 Claude: Available ✓ - Consensus building and synthesis
 
 💰 Estimated Cost: $0.01-0.05
 ⏱️  Estimated Time: 2-5 minutes
 ```
 
-**Validation:**
-- If BOTH Codex and Gemini unavailable → STOP, suggest: `/octo:setup`
-- If ONE unavailable → Continue with available provider(s)
-- If BOTH available → Proceed normally
-
-**DO NOT PROCEED TO STEP 2 until banner displayed.**
+**DO NOT PROCEED TO STEP 2 until banner displayed.** The banner shows users which providers will run and what costs they'll incur — starting API calls without this visibility violates cost transparency.
 
 ---
 
@@ -74,16 +82,16 @@ Provider Availability:
 
 ```bash
 # Initialize state if needed
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" init_state
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" init_state
 
 # Set current workflow
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" set_current_workflow "flow-define" "define"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" set_current_workflow "flow-define" "define"
 
 # Get prior decisions (if any)
-prior_decisions=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_decisions "all")
+prior_decisions=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_decisions "all")
 
 # Get context from discover phase
-discover_context=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_context "discover")
+discover_context=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_context "discover")
 
 # Display what you found (if any)
 if [[ "$discover_context" != "null" ]]; then
@@ -101,6 +109,7 @@ fi
 - Discovery phase research (if completed)
 - Prior architectural decisions
 - User vision captured earlier
+- If **claude-mem** is installed, its MCP tools (`search`, `timeline`, `get_observations`) are available — use them to find past decisions on similar topics
 
 **DO NOT PROCEED TO STEP 3 until state read.**
 
@@ -167,7 +176,7 @@ Use the debate synthesis to set the approach context for the Define phase.
 
 ```bash
 # Source context manager
-source "${CLAUDE_PLUGIN_ROOT}/scripts/context-manager.sh"
+source "${HOME}/.claude-octopus/plugin/scripts/context-manager.sh"
 
 # Extract user answers from AskUserQuestion results
 user_flow="[Answer from question 1]"
@@ -192,7 +201,7 @@ echo "📋 Context captured and saved to .claude-octopus/context/define-context.
 - Guide implementation decisions (develop phase)
 - Validate against user expectations (deliver phase)
 
-**DO NOT PROCEED TO STEP 4 until context captured.**
+**DO NOT PROCEED TO STEP 4 until context captured.** User vision (UX approach, priorities, out-of-scope items) scopes the multi-AI research — without it, providers research too broadly and the definition misses the user's actual intent.
 
 ---
 
@@ -201,16 +210,16 @@ echo "📋 Context captured and saved to .claude-octopus/context/define-context.
 **You MUST execute this command via the Bash tool:**
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh define "<user's clarification request>"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh define "<user's clarification request>"
 ```
 
 **CRITICAL: You are PROHIBITED from:**
-- ❌ Defining requirements directly without calling orchestrate.sh
+- ❌ Defining requirements directly without calling orchestrate.sh — single-model analysis misses the technical-vs-business perspective split that Codex and Gemini provide, producing requirements with blind spots
 - ❌ Using direct analysis instead of orchestrate.sh
 - ❌ Claiming you're "simulating" the workflow
 - ❌ Proceeding to Step 3 without running this command
 
-**This is NOT optional. You MUST use the Bash tool to invoke orchestrate.sh.**
+**You MUST use the Bash tool to invoke orchestrate.sh.**
 
 #### What Users See During Execution (v7.16.0+)
 
@@ -251,7 +260,7 @@ cat "$SYNTHESIS_FILE"
 1. Report error to user
 2. Show logs from `~/.claude-octopus/logs/`
 3. DO NOT proceed with presenting results
-4. DO NOT substitute with direct analysis
+4. DO NOT substitute with direct analysis — fallback to single-model analysis defeats the purpose of multi-provider consensus and produces narrower requirements
 
 ---
 
@@ -268,22 +277,23 @@ key_definition=$(head -50 "$SYNTHESIS_FILE" | grep -A 3 "## Problem Definition\|
 decision_made=$(echo "$key_definition" | grep -o "decided to\|chose to\|selected\|using [A-Za-z0-9 ]*" | head -1)
 
 if [[ -n "$decision_made" ]]; then
-  "${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" write_decision \
+  "${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" write_decision \
     "define" \
     "$decision_made" \
     "Consensus from multi-AI definition phase"
 fi
 
 # Update define phase context
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_context \
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_context \
   "define" \
   "$key_definition"
 
 # Update metrics
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "phases_completed" "1"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "codex"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "gemini"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "claude"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_metrics "phases_completed" "1"
+# Track actual providers used (dynamic — not hardcoded)
+for _provider in $(bash "${HOME}/.claude-octopus/plugin/scripts/helpers/check-providers.sh" | grep ":available" | cut -d: -f1) claude; do
+  "${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_metrics "provider" "$_provider"
+done
 ```
 
 **DO NOT PROCEED TO STEP 7 until state updated.**
@@ -320,7 +330,7 @@ Read the synthesis file and present:
 
 **First, check task status (if available):**
 ```bash
-task_status=$("${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh" get-task-status 2>/dev/null || echo "")
+task_status=$("${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh" get-task-status 2>/dev/null || echo "")
 ```
 
 ```
@@ -335,7 +345,15 @@ Providers:
 🔵 Claude - Consensus building and synthesis
 ```
 
+| Indicator | Provider | Cost Source |
+|-----------|----------|-------------|
+| 🔴 | Codex CLI | User's OPENAI_API_KEY |
+| 🟡 | Gemini CLI | User's GEMINI_API_KEY |
+| 🟣 | Perplexity Sonar | User's PERPLEXITY_API_KEY |
+| 🔵 | Claude | Included with Claude Code |
+
 **This is NOT optional.** Users need to see which AI providers are active and understand they are being charged for external API calls (🔴 🟡).
+
 
 ---
 
@@ -405,7 +423,7 @@ Providers:
 ### Step 1: Invoke Grasp Phase
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh define "<user's clarification request>"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh define "<user's clarification request>"
 ```
 
 ### Step 2: Multi-Provider Problem Definition
@@ -527,7 +545,7 @@ Claude:
 🐙 **CLAUDE OCTOPUS ACTIVATED** - Multi-provider problem definition
 🎯 Define Phase: Clarifying authentication requirements
 
-[Executes: ${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh define "Define exact requirements for user authentication system"]
+[Executes: ${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh define "Define exact requirements for user authentication system"]
 
 [After completion, reads synthesis and presents:]
 
@@ -596,7 +614,7 @@ Claude:
 - Security: HTTPS only, secure cookies, CSRF protection
 
 ### Gemini Analysis (Business/User)
-- User journey: Registration → Email verification → Login → Access app
+- User journey: Registration -> Email verification -> Login -> Access app
 - Error handling: Clear messages without security leaks
 - Performance: Auth checks < 50ms
 - Compliance: GDPR (data deletion), password policies
@@ -702,14 +720,14 @@ After definition completes:
 
 ```bash
 # Update state after Definition completion
-"${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_state \
+"${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_state \
   --status "complete" \
   --history "Define phase completed"
 
 # Populate ROADMAP.md with defined requirements
 if [[ -f "$SYNTHESIS_FILE" ]]; then
   echo "📝 Updating .octo/ROADMAP.md with defined phases..."
-  "${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_roadmap \
+  "${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_roadmap \
     --from-synthesis "$SYNTHESIS_FILE"
 fi
 ```

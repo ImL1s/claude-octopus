@@ -38,6 +38,8 @@ trigger: |
   - Trivial single-file changes
 ---
 
+{{PREAMBLE}}
+
 ## Pre-Development: State Check
 
 Before starting development:
@@ -50,14 +52,14 @@ Before starting development:
 ```bash
 # Verify Define phase is complete
 if [[ -f ".octo/STATE.md" ]]; then
-  define_status=$("${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" get_phase_status 2)
+  define_status=$("${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" get_phase_status 2)
   if [[ "$define_status" != "complete" ]]; then
     echo "⚠️ Warning: Define phase not marked complete. Consider running definition first."
   fi
 fi
 
 # Update state for Development phase
-"${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_state \
+"${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_state \
   --phase 3 \
   --position "Development" \
   --status "in_progress"
@@ -110,7 +112,7 @@ Self-contained files preferred. Accessibility: ARIA labels, keyboard nav, 44px t
 Before calling orchestrate.sh, check if the design intelligence engine exists and query it for relevant design context:
 
 ```bash
-SEARCH_PY="${CLAUDE_PLUGIN_ROOT}/vendors/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py"
+SEARCH_PY="${HOME}/.claude-octopus/plugin/vendors/ui-ux-pro-max-skill/src/ui-ux-pro-max/scripts/search.py"
 if [[ -f "$SEARCH_PY" ]]; then
     # Detect relevant domains from the prompt
     design_context=""
@@ -141,12 +143,14 @@ orchestrate.sh develop "<user prompt>\n\nQuality requirements for this deliverab
 
 ### STEP 2: Display Visual Indicators (MANDATORY - BLOCKING)
 
-**Check provider availability:**
+**MANDATORY: You MUST use the Bash tool to run this provider check BEFORE displaying the banner. Do NOT skip it. Do NOT assume availability.**
 
 ```bash
-command -v codex &> /dev/null && codex_status="Available ✓" || codex_status="Not installed ✗"
-command -v gemini &> /dev/null && gemini_status="Available ✓" || gemini_status="Not installed ✗"
+bash "${HOME}/.claude-octopus/plugin/scripts/helpers/check-providers.sh"
 ```
+
+**Use the ACTUAL results below. PROHIBITED: Showing only "🔵 Claude: Available ✓" without listing all providers.**
+
 
 **Display this banner BEFORE orchestrate.sh execution:**
 
@@ -178,11 +182,6 @@ Provider Availability:
 ⏱️  Estimated Time: 3-7 minutes
 ```
 
-**Validation:**
-- If BOTH Codex and Gemini unavailable → STOP, suggest: `/octo:setup`
-- If ONE unavailable → Continue with available provider(s)
-- If BOTH available → Proceed normally
-
 **DO NOT PROCEED TO STEP 3 until banner displayed.** The banner shows users which providers will run and what costs they'll incur — starting API calls without this visibility violates cost transparency.
 
 ---
@@ -193,17 +192,17 @@ Provider Availability:
 
 ```bash
 # Initialize state if needed
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" init_state
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" init_state
 
 # Set current workflow
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" set_current_workflow "flow-develop" "develop"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" set_current_workflow "flow-develop" "develop"
 
 # Get prior decisions (critical for implementation)
-prior_decisions=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_decisions "all")
+prior_decisions=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_decisions "all")
 
 # Get context from discover and define phases
-discover_context=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_context "discover")
-define_context=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_context "define")
+discover_context=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_context "discover")
+define_context=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_context "define")
 
 # Display what you found (if any)
 if [[ "$discover_context" != "null" ]]; then
@@ -237,7 +236,7 @@ fi
 **You MUST execute this command via the Bash tool:**
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh develop "<user's implementation request>"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh develop "<user's implementation request>"
 ```
 
 **CRITICAL: You are PROHIBITED from:**
@@ -303,22 +302,19 @@ implementation_approach=$(head -50 "$SYNTHESIS_FILE" | grep -A 3 "## Implementat
 decision_made=$(echo "$implementation_approach" | grep -o "implemented\|using [A-Za-z0-9 ]*\|chose to\|pattern:" | head -1)
 
 if [[ -n "$decision_made" ]]; then
-  "${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" write_decision \
+  "${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" write_decision \
     "develop" \
     "$decision_made" \
     "Multi-AI implementation consensus"
 fi
 
 # Update develop phase context
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_context \
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_context \
   "develop" \
   "$implementation_approach"
 
 # Update metrics
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "phases_completed" "1"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "codex"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "gemini"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "claude"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_metrics "phases_completed" "1"
 ```
 
 **DO NOT PROCEED TO STEP 7 until state updated.**
@@ -394,7 +390,7 @@ Providers:
 🔵 Claude - Integration and quality review
 ```
 
-**This is NOT optional.** Users need to see which AI providers are active and understand they are being charged for external API calls (🔴 🟡).
+{{VISUAL_INDICATORS}}
 
 ---
 
@@ -473,7 +469,7 @@ Providers:
 ### Step 1: Invoke Tangle Phase
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh develop "<user's implementation request>"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh develop "<user's implementation request>"
 ```
 
 ### Step 2: Multi-Provider Implementation
@@ -610,7 +606,7 @@ Claude:
 🐙 **CLAUDE OCTOPUS ACTIVATED** - Multi-provider implementation mode
 🛠️ Develop Phase: Building authentication system
 
-[Executes: ${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh develop "Build a user authentication system with JWT"]
+[Executes: ${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh develop "Build a user authentication system with JWT"]
 
 [After completion, reads synthesis and presents:]
 
@@ -691,16 +687,7 @@ The tangle phase automatically runs quality checks via `.claude/hooks/quality-ga
 ./hooks/quality-gate.sh
 ```
 
-**Quality Metrics:**
-- **Security**: SQL injection, XSS, authentication issues
-- **Best Practices**: Error handling, logging, validation
-- **Code Quality**: Complexity, maintainability, documentation
-- **Test Coverage**: Are tests included?
-
-**Thresholds:**
-- **Score >= 80**: Proceed with implementation
-- **Score 60-79**: Proceed with warnings (address issues)
-- **Score < 60**: Review required before implementation
+{{QUALITY_GATES}}
 
 ---
 
@@ -820,7 +807,7 @@ After development completes:
 
 ```bash
 # Update state after Development completion
-"${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_state \
+"${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_state \
   --status "complete" \
   --history "Develop phase completed"
 
@@ -831,7 +818,7 @@ echo "📌 Created checkpoint: $checkpoint_tag"
 
 # Record files modified in this phase
 modified_files=$(git diff --name-only HEAD~1 2>/dev/null || echo "See git log")
-"${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_state \
+"${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_state \
   --history "Files modified: $modified_files"
 ```
 

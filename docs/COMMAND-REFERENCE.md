@@ -1,6 +1,6 @@
 # Command and Usage Reference
 
-Complete reference for all 39 Claude Octopus slash commands, plus activation rules, provider indicators, and the project-lifecycle features that are triggered by natural language rather than slash commands.
+Complete reference for all 48 Claude Octopus slash commands, 10 CLI tools (`octopus` + `octo-compress`), plus activation rules, provider indicators, and the project-lifecycle features that are triggered by natural language rather than slash commands.
 
 ---
 
@@ -19,7 +19,7 @@ All slash commands use the `/octo:` namespace. The smart router command is `/oct
 | Command | Description |
 |---------|-------------|
 | `/octo:setup` | Check setup status and configure providers (alias: `/octo:sys-setup`) |
-| `/octo:doctor` | Environment diagnostics across 9 check categories |
+| `/octo:doctor` | Environment diagnostics across 9 check categories (includes RTK install + token optimization) |
 | `/octo:model-config` | Configure provider model selection per workflow phase |
 | `/octo:km` | Toggle Knowledge Work mode |
 | `/octo:dev` | Switch to Dev Work mode |
@@ -41,7 +41,7 @@ All slash commands use the `/octo:` namespace. The smart router command is `/oct
 |---------|-------------|
 | `/octo:research` | Deep research with multi-source synthesis |
 | `/octo:brainstorm` | Creative thought partner brainstorming session |
-| `/octo:debate` | AI Debate Hub — 3-way debates (Claude + Gemini + Codex) |
+| `/octo:debate` | AI Debate Hub — four-way debates (Claude + Gemini + Codex) |
 | `/octo:prd` | Write an AI-optimized PRD with 100-point scoring |
 | `/octo:prd-score` | Score an existing PRD against the framework |
 | `/octo:spec` | NLSpec authoring from multi-AI research |
@@ -85,11 +85,48 @@ All slash commands use the `/octo:` namespace. The smart router command is `/oct
 | `/octo:schedule` | Manage scheduled workflow jobs (wizard, dashboard, enable/disable) |
 | `/octo:scheduler` | Manage the scheduler daemon (start/stop/status) |
 
+### Safety
+
+| Command | Description |
+|---------|-------------|
+| `/octo:careful` | Activate destructive command warnings for the session |
+| `/octo:freeze` | Restrict file edits to a specific directory boundary |
+| `/octo:guard` | Activate both careful mode and freeze mode together |
+| `/octo:unfreeze` | Remove freeze mode edit restriction |
+
+### Session & Insights
+
+| Command | Description |
+|---------|-------------|
+| `/octo:costs` | Show cost breakdown by provider and workflow for the current session |
+| `/octo:retro` | Generate engineering retrospectives from git history with trends |
+| `/octo:history` | Query past workflow results — filter by workflow type, date, or provider |
+| `/octo:resume` | Resume a previous agent by ID — continue an interrupted task |
+| `/octo:discipline` | Toggle discipline mode — auto-invoke verification and review checks |
+
 ### Admin
 
 | Command | Description |
 |---------|-------------|
 | `/octo:claw` | OpenClaw instance admin across macOS, Ubuntu/Debian, Docker, OCI, Proxmox |
+| `/octo:octo` | [Legacy] Redirects to `/octo:auto` |
+
+### CLI Tools (v9.19.0+)
+
+Plugin executables available as bare commands (CC v2.1.91+). Also usable via full path on older CC versions.
+
+| Command | Description |
+|---------|-------------|
+| `octopus doctor` | Run diagnostics (same as `/octo:doctor`) |
+| `octopus version` | Show plugin version |
+| `octopus session` | Show current session info |
+| `octopus fleet` | Show provider fleet status |
+| `octo-compress` | Pipe verbose output for token savings: `npm install 2>&1 \| octo-compress` |
+| `octo-compress json` | Force JSON array/object compression |
+| `octo-compress logs` | Force log compression (head+tail) |
+| `octo-compress html` | Force HTML tag stripping |
+| `octo-compress stats` | Show compression savings for current session |
+| `octo-compress config` | Show compression configuration |
 
 ### Project Lifecycle (Skill-Based)
 
@@ -486,7 +523,7 @@ Creative thought partner brainstorming session — Solo or Multi-AI Team mode.
 
 ### `/octo:debate`
 
-AI Debate Hub — structured 3-way debates between Claude, Gemini, and Codex.
+AI Debate Hub — structured four-way debates between Claude, Gemini, and Codex.
 
 **Usage:**
 ```
@@ -923,7 +960,7 @@ Full UI/UX design workflow with BM25 design intelligence and optional Figma inte
 - 🎨 Figma MCP — Design context when a Figma URL is provided
 - 🧩 shadcn MCP — Component suggestions when available
 
-**Three-way adversarial design critique** (v8.43.0+): Between Define and Develop phases, Codex, Gemini, and Claude each review the proposed design direction independently, issues are triaged, and fixes are applied before tokens/components are generated.
+**Multi-LLM adversarial design critique** (v8.43.0+): Between Define and Develop phases, Codex, Gemini, and Claude each review the proposed design direction independently, issues are triaged, and fixes are applied before tokens/components are generated.
 
 ---
 
@@ -1044,6 +1081,229 @@ OpenClaw instance administration across five platforms.
 - `octo manage my openclaw server`
 - `octo harden my server`
 - `octo check server health`
+
+---
+
+### `/octo:octo`
+
+[Legacy] Redirects to `/octo:auto`. Kept for backward compatibility.
+
+**Usage:**
+```
+/octo:octo research OAuth patterns
+```
+
+**Behavior:** Shows a notice that the command has been renamed, then routes to `/octo:auto`.
+
+---
+
+## Safety
+
+### `/octo:careful`
+
+Activate destructive command warnings for the current session.
+
+**Usage:**
+```
+/octo:careful
+```
+
+**What it does:**
+- Adds a PreToolUse safety net on Bash commands
+- Warns before destructive commands, requiring confirmation
+- Session-scoped — resets when the session ends
+
+**Detected patterns:**
+
+| Pattern | Example |
+|---------|---------|
+| Recursive delete | `rm -rf` (except safe targets: node_modules, dist, .next, build, coverage) |
+| Database drop | `DROP TABLE`, `DROP DATABASE`, `TRUNCATE` |
+| Force push | `git push --force`, `git push -f` |
+| Hard reset | `git reset --hard` |
+| Discard changes | `git checkout .`, `git restore .` |
+| Container/cluster | `kubectl delete`, `docker rm -f`, `docker system prune` |
+
+**Denial audit log (v9.21.0+, CC v2.1.89+):**
+
+When careful mode is active and Claude Code's auto-mode denies a command, the denial is logged to `~/.claude-octopus/denied-commands.log` with the tool name and reason. Arguments are never logged for security. The log rotates at 100KB. Disable with `OCTO_CAREFUL_MODE=off`.
+
+**Deactivation:** Automatic at session end, or remove the state file manually.
+
+---
+
+### `/octo:freeze`
+
+Restrict Edit and Write operations to a specific directory boundary.
+
+**Usage:**
+```
+/octo:freeze src/auth
+/octo:freeze ./packages/core
+/octo:freeze /absolute/path/to/module
+```
+
+**What it does:**
+- Blocks Edit/Write to files **outside** the specified directory
+- Read, Bash, Glob, Grep remain unrestricted (investigation is not blocked)
+- Session-scoped
+
+**Deactivation:** `/octo:unfreeze`
+
+---
+
+### `/octo:guard`
+
+Activate both careful mode and freeze mode in a single command.
+
+**Usage:**
+```
+/octo:guard src/auth
+/octo:guard ./packages/core
+```
+
+**What it does:**
+- Enables destructive command warnings (same as `/octo:careful`)
+- Enables edit boundary enforcement (same as `/octo:freeze <dir>`)
+
+**Recommended** for focused work in sensitive codebases.
+
+**Deactivation:** `/octo:unfreeze` removes the edit boundary; careful mode remains active until session end.
+
+---
+
+### `/octo:unfreeze`
+
+Remove the edit boundary set by `/octo:freeze` or `/octo:guard`.
+
+**Usage:**
+```
+/octo:unfreeze
+```
+
+**What it does:**
+- Removes directory restriction on Edit/Write operations
+- Does **not** deactivate careful mode (destructive command warnings stay active if enabled)
+
+---
+
+## Session & Insights
+
+### Session Auto-Titling (v9.21.0+, CC v2.1.94+)
+
+When you invoke any `/octo:` command, the session is automatically titled "Octopus: /octo:review" (etc.) for easier identification in `/resume`. Only the first `/octo:` command per session sets the title — subsequent commands don't overwrite. If you `/rename` the session, auto-titling is suppressed. Disable with `OCTOPUS_AUTO_TITLE=false`.
+
+---
+
+### `/octo:costs`
+
+Show a cost breakdown by provider and workflow for the current session.
+
+**Usage:**
+```
+/octo:costs
+```
+
+**What it shows:**
+- Per-provider token usage (input/output) and estimated cost
+- Per-workflow breakdown (which commands consumed what)
+- Cumulative session total
+- Historical comparison when previous session data exists
+
+**Data sources:** `~/.claude-octopus/usage/`, `~/.claude-octopus/routing.log`
+
+---
+
+### `/octo:retro`
+
+Generate data-driven engineering retrospectives from git history.
+
+**Usage:**
+```
+/octo:retro              # Last 7 days (default)
+/octo:retro 24h          # Last 24 hours
+/octo:retro 14d          # Last 14 days
+/octo:retro 30d          # Last 30 days
+```
+
+**What it does:**
+- Mines git history for commit patterns, contributor breakdown, and hotspots
+- Identifies AI-assisted commits vs manual commits
+- Surfaces session analysis and trends
+- Generates a structured retrospective report
+
+---
+
+### `/octo:history`
+
+Query past workflow results from the persistent run store.
+
+**Usage:**
+```
+/octo:history                    # Last 10 runs
+/octo:history 20                 # Last 20 runs
+/octo:history discover           # Filter by workflow type
+/octo:history 7d                 # Filter by time window
+```
+
+**What it shows:**
+- Workflow type, timestamp, duration, and provider usage
+- Filterable by workflow name, time window, or count
+- Requires at least one previous multi-AI workflow run to populate the store
+
+**Data source:** `~/.claude-octopus/runs/run-log.jsonl`
+
+---
+
+### `/octo:resume`
+
+Resume a previously-running Claude agent by ID.
+
+**Usage:**
+```
+/octo:resume <agent-id>
+/octo:resume <agent-id> "fix the failing test in auth.ts"
+```
+
+**What it does:**
+- Looks up the agent's transcript and continues where it left off
+- Optionally accepts a follow-up prompt to redirect the agent
+- Falls back to spawning a fresh agent if continuation is not supported
+
+**Requirements:**
+- Claude Code v2.1.34+ (`SUPPORTS_CONTINUATION=true`)
+- Agent Teams enabled
+- Agent must be a Claude agent (Codex/Gemini agents don't support transcripts)
+
+**Find agent IDs:** Check `/octo:sentinel` output or `~/.claude-octopus/results/` for recent result files.
+
+---
+
+### `/octo:discipline`
+
+Toggle discipline mode — automatic verification, brainstorming, and review gates.
+
+**Usage:**
+```
+/octo:discipline on       # Enable auto-invoke discipline checks
+/octo:discipline off      # Disable (manual invoke only)
+/octo:discipline status   # Show current state
+```
+
+**Gates (when enabled):**
+
+| Gate | Trigger | What it does |
+|------|---------|-------------|
+| Brainstorm | Before writing any code | Ensures approach has been discussed/planned |
+| Verification | Before claiming "done" or committing | Runs actual verification, requires evidence |
+| Review | After completing non-trivial changes | Auto-invokes spec compliance + code quality review |
+| Response | When receiving review feedback | Verifies feedback against actual code before implementing |
+| Investigation | On any bug, error, or test failure | Root cause investigation before proposing fixes |
+| Context | At task start | Detects dev vs knowledge work mode |
+| Decision | When comparing options | Structured comparison with criteria and scores |
+| Intent | Before creative/writing tasks | Locks in goal and audience first |
+
+**Persists across sessions** via `~/.claude-octopus/config/discipline.conf`.
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: octopus-quick
 version: 1.0.0
-description: Quick execution for ad-hoc tasks without workflow overhead. Use when: Use this skill when user says "quick fix", "ad-hoc task", or explicitly. requests fast execution without full workflow overhead.
+description: "Quick execution for ad-hoc tasks without workflow overhead. Use when: Use this skill when user says \"quick fix\", \"ad-hoc task\", or explicitly. requests fast execution without full workflow overhead."
 ---
 
 # Quick Mode - Lightweight Task Execution ⚡
@@ -146,13 +146,13 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
 ```bash
 # Update state with quick task execution
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" write_decision \
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" write_decision \
   "quick" \
   "$(git log -1 --pretty=%s)" \
   "Ad-hoc task executed in quick mode"
 
 # Update metrics
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics \
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_metrics \
   "execution_time" \
   "1"  # Estimated in minutes
 ```

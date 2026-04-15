@@ -1,7 +1,7 @@
 ---
 name: octopus-architecture
 version: 1.0.0
-description: System architecture and API design with multi-AI consensus
+description: "System architecture and API design with multi-AI consensus"
 ---
 
 ## ⚠️ EXECUTION CONTRACT (MANDATORY - CANNOT SKIP)
@@ -10,22 +10,26 @@ This skill uses **ENFORCED execution mode**. You MUST follow this exact sequence
 
 ### STEP 1: Display Visual Indicators (MANDATORY - BLOCKING)
 
-**Check provider availability:**
+**MANDATORY: Run the centralized provider check BEFORE displaying the banner:**
 
 ```bash
-command -v codex &> /dev/null && codex_status="Available ✓" || codex_status="Not installed ✗"
-command -v gemini &> /dev/null && gemini_status="Available ✓" || gemini_status="Not installed ✗"
+bash "${HOME}/.claude-octopus/plugin/scripts/helpers/check-providers.sh"
 ```
 
-**Display this banner BEFORE orchestrate.sh execution:**
+**Use the ACTUAL results. PROHIBITED: Showing only "🔵 Claude: Available ✓" without listing all providers.**
+
+**Display this banner BEFORE orchestrate.sh execution (list ALL providers from check output):**
 
 ```
 🐙 **CLAUDE OCTOPUS ACTIVATED** - Architecture design mode
 🏗️ Architecture: [Brief description of system to design]
 
 Provider Availability:
-🔴 Codex CLI: ${codex_status} - Backend architecture patterns
-🟡 Gemini CLI: ${gemini_status} - Alternative approaches
+🔴 Codex CLI: [status from check] - Backend architecture patterns
+🟡 Gemini CLI: [status from check] - Alternative approaches
+🟢 Copilot CLI: [status from check] - GitHub integration
+🟣 Qwen CLI: [status from check] - Additional perspective
+🟤 OpenCode CLI: [status from check] - Multi-provider routing
 🔵 Claude: Available ✓ - Synthesis and recommendations
 
 💰 Estimated Cost: $0.02-0.08
@@ -33,9 +37,9 @@ Provider Availability:
 ```
 
 **Validation:**
-- If BOTH Codex and Gemini unavailable → STOP, suggest: `/octo:setup`
-- If ONE unavailable → Continue with available provider(s)
-- If BOTH available → Proceed normally
+- If ALL external CLI providers unavailable → STOP, suggest: `/octo:setup`
+- If some unavailable → Continue with available provider(s)
+- If multiple available → Proceed normally
 
 **DO NOT PROCEED TO STEP 2 until banner displayed.**
 
@@ -46,7 +50,7 @@ Provider Availability:
 **You MUST execute this command via the Bash tool:**
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh spawn backend-architect "<user's architecture request>"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh spawn backend-architect "<user's architecture request>"
 ```
 
 **CRITICAL: You are PROHIBITED from:**
@@ -103,10 +107,10 @@ Invokes the backend-architect persona for system design during the `grasp` (defi
 
 ```bash
 # Via orchestrate.sh
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh spawn backend-architect "Design a scalable notification system"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh spawn backend-architect "Design a scalable notification system"
 
 # Via auto-routing (detects architecture intent)
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh auto "architect the event-driven messaging system"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh auto "architect the event-driven messaging system"
 ```
 
 ## Capabilities

@@ -9,7 +9,18 @@
 
 set -euo pipefail
 
-# --- 0. Session sync (merged from session-sync.sh to reduce hook spawns) ---
+# --- 0. First-run detection (v9.19.2) ---
+# On very first install, auto-prompt the user to run /octo:setup
+SETUP_MARKER="${HOME}/.claude-octopus/.setup-complete"
+if [[ ! -f "$SETUP_MARKER" ]]; then
+    mkdir -p "${HOME}/.claude-octopus"
+    touch "$SETUP_MARKER"
+    echo "[🐙] Welcome to Claude Octopus! Running /octo:setup for first-time configuration..."
+    # This additionalContext triggers Claude to invoke the setup skill
+    exit 0
+fi
+
+# --- 0b. Session sync (merged from session-sync.sh to reduce hook spawns) ---
 export CLAUDE_OCTOPUS_SESSION_ID="${CLAUDE_SESSION_ID:-}"
 
 SESSION_FILE="${HOME}/.claude-octopus/session.json"
@@ -63,20 +74,37 @@ if [[ -n "$AUTONOMY" ]] && command -v jq &>/dev/null; then
            '.autonomy = $autonomy | .restored_from_memory = true | if $providers != "" then .providers = $providers else . end' \
            "$SESSION_FILE" > "$TMP" 2>/dev/null && mv "$TMP" "$SESSION_FILE" 2>/dev/null || rm -f "$TMP"
     else
-        # Create initial session with restored preferences
-        cat > "$SESSION_FILE" <<EOFJSON
-{
-  "autonomy": "$AUTONOMY",
-  "restored_from_memory": true,
-  "session_start": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-EOFJSON
+        # Create initial session with restored preferences (jq --arg for safe escaping)
+        jq -n \
+            --arg autonomy "$AUTONOMY" \
+            --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{"autonomy": $autonomy, "restored_from_memory": true, "session_start": $ts}' \
+            > "$SESSION_FILE" 2>/dev/null || true
     fi
 
-    echo "[Octopus] Restored preferences from auto-memory: autonomy=${AUTONOMY}"
+    echo "[🐙] restored: autonomy=${AUTONOMY}"
 fi
 
-# --- 4. Query claude-mem for recent project context (v8.57.0) ---
+# --- 4. Deploy managed-settings.d/ fragment (v9.19.0, CC v2.1.83+) ---
+# Installs octopus-defaults.json with git instructions off + auto-memory dir
+# Note: Generated dynamically (not copied) because JSON has no tilde expansion
+if [[ "${SUPPORTS_MANAGED_SETTINGS_D:-false}" == "true" ]]; then
+    SETTINGS_D="${HOME}/.claude/managed-settings.d"
+    SETTINGS_DEST="${SETTINGS_D}/octopus-defaults.json"
+    if [[ ! -f "$SETTINGS_DEST" ]] || ! grep -q "$HOME" "$SETTINGS_DEST" 2>/dev/null; then
+        mkdir -p "$SETTINGS_D"
+        local _tmp="${SETTINGS_DEST}.tmp.$$"
+        cat > "$_tmp" <<EOFSET
+{
+  "includeGitInstructions": false,
+  "autoMemoryDirectory": "${HOME}/.claude-octopus/memory/"
+}
+EOFSET
+        mv "$_tmp" "$SETTINGS_DEST" 2>/dev/null || rm -f "$_tmp"
+    fi
+fi
+
+# --- 5. Query claude-mem for recent project context (v8.57.0) ---
 BRIDGE_SCRIPT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}/scripts/claude-mem-bridge.sh"
 if [[ -x "$BRIDGE_SCRIPT" ]]; then
     MEM_CONTEXT=$("$BRIDGE_SCRIPT" context "" 3 2>/dev/null || echo "")

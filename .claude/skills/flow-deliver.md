@@ -5,7 +5,7 @@ aliases:
   - deliver-workflow
   - ink
   - ink-workflow
-description: Multi-AI validation and review using Codex and Gemini CLIs (Double Diamond Deliver phase)
+description: Multi-AI validation, scoring, and review using Codex and Gemini CLIs (Double Diamond Deliver phase)
 
 # Claude Code v2.1.12+ Integration
 agent: general-purpose
@@ -21,8 +21,9 @@ validation_gates:
   - orchestrate_sh_executed
   - validation_file_exists
 trigger: |
-  AUTOMATICALLY ACTIVATE when user requests validation or review:
+  AUTOMATICALLY ACTIVATE when user requests validation, scoring, or review:
   - "review X" or "validate Y" or "test Z"
+  - "score this", "quality check", "validate before shipping"
   - "check if X works correctly"
   - "verify the implementation of Y"
   - "find issues in Z"
@@ -36,6 +37,8 @@ trigger: |
   - Built-in commands (/plugin, /help, etc.)
 ---
 
+{{PREAMBLE}}
+
 ## Pre-Delivery: State Check
 
 Before starting delivery:
@@ -48,14 +51,14 @@ Before starting delivery:
 ```bash
 # Verify Develop phase is complete
 if [[ -f ".octo/STATE.md" ]]; then
-  develop_status=$("${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" get_phase_status 3)
+  develop_status=$("${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" get_phase_status 3)
   if [[ "$develop_status" != "complete" ]]; then
     echo "⚠️ Warning: Develop phase not marked complete. Consider completing development first."
   fi
 fi
 
 # Update state for Delivery phase
-"${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_state \
+"${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_state \
   --phase 4 \
   --position "Delivery" \
   --status "in_progress"
@@ -79,7 +82,7 @@ Analyze the user's prompt and project to determine context:
 - Code terms: "code", "implementation", "API", "endpoint", "function", "module"
 - Quality terms: "security", "performance", "tests", "coverage", "bugs"
 
-**Also check**: What is being reviewed? Code files → Dev, Documents → Knowledge
+**Also check**: What is being reviewed? Code files -> Dev, Documents -> Knowledge
 
 **Capture context_type = "Dev" or "Knowledge"**
 
@@ -107,12 +110,14 @@ orchestrate.sh deliver "<user prompt>\n\nDomain-specific validation criteria:\n<
 
 ### STEP 2: Display Visual Indicators (MANDATORY - BLOCKING)
 
-**Check provider availability:**
+**MANDATORY: You MUST use the Bash tool to run this provider check BEFORE displaying the banner. Do NOT skip it. Do NOT assume availability.**
 
 ```bash
-command -v codex &> /dev/null && codex_status="Available ✓" || codex_status="Not installed ✗"
-command -v gemini &> /dev/null && gemini_status="Available ✓" || gemini_status="Not installed ✗"
+bash "${HOME}/.claude-octopus/plugin/scripts/helpers/check-providers.sh"
 ```
+
+**Use the ACTUAL results below. PROHIBITED: Showing only "🔵 Claude: Available ✓" without listing all providers.**
+
 
 **Display this banner BEFORE orchestrate.sh execution:**
 
@@ -144,11 +149,6 @@ Provider Availability:
 ⏱️  Estimated Time: 3-7 minutes
 ```
 
-**Validation:**
-- If BOTH Codex and Gemini unavailable → STOP, suggest: `/octo:setup`
-- If ONE unavailable → Continue with available provider(s)
-- If BOTH available → Proceed normally
-
 **DO NOT PROCEED TO STEP 3 until banner displayed.** The banner shows users which providers will run and what costs they'll incur — starting API calls without this visibility violates cost transparency.
 
 ---
@@ -159,18 +159,18 @@ Provider Availability:
 
 ```bash
 # Initialize state if needed
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" init_state
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" init_state
 
 # Set current workflow
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" set_current_workflow "flow-deliver" "deliver"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" set_current_workflow "flow-deliver" "deliver"
 
 # Get all prior decisions (critical for validation)
-prior_decisions=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_decisions "all")
+prior_decisions=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_decisions "all")
 
 # Get context from all prior phases
-discover_context=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_context "discover")
-define_context=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_context "define")
-develop_context=$("${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" get_context "develop")
+discover_context=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_context "discover")
+define_context=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_context "define")
+develop_context=$("${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" get_context "develop")
 
 # Display what you found (validation needs full context)
 echo "📋 Validation Context Summary:"
@@ -209,7 +209,7 @@ fi
 **You MUST execute this command via the Bash tool:**
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh deliver "<user's validation request>"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh deliver "<user's validation request>"
 ```
 
 **CRITICAL: You are PROHIBITED from:**
@@ -271,20 +271,17 @@ cat "$VALIDATION_FILE"
 # Update deliver phase context with validation summary
 validation_summary=$(head -30 "$VALIDATION_FILE" | grep -A 2 "## Summary\|Pass\|Fail" | tail -2 | tr '\n' ' ')
 
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_context \
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_context \
   "deliver" \
   "$validation_summary"
 
 # Update final metrics (completion of full workflow)
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "phases_completed" "1"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "codex"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "gemini"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" update_metrics "provider" "claude"
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" update_metrics "phases_completed" "1"
 
 # Display final state summary
 echo ""
 echo "📊 Session Complete - Final Metrics:"
-"${CLAUDE_PLUGIN_ROOT}/scripts/state-manager.sh" show_summary
+"${HOME}/.claude-octopus/plugin/scripts/state-manager.sh" show_summary
 ```
 
 **DO NOT PROCEED TO STEP 7 until state updated.**
@@ -341,7 +338,7 @@ ${REVIEW_SUMMARY}
     echo "Validation report posted to PR #${PR_NUM}"
 
     # Update agent registry
-    REGISTRY="${CLAUDE_PLUGIN_ROOT}/scripts/agent-registry.sh"
+    REGISTRY="${HOME}/.claude-octopus/plugin/scripts/agent-registry.sh"
     if [[ -x "$REGISTRY" ]]; then
         AGENT_ID="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
         "$REGISTRY" update "$AGENT_ID" --pr "$PR_NUM" 2>/dev/null || true
@@ -378,7 +375,7 @@ Analyze the user's prompt and project to determine context:
 - Code terms: "code", "implementation", "API", "endpoint", "function", "module"
 - Quality terms: "security", "performance", "tests", "coverage", "bugs"
 
-**Also check**: What is being reviewed? Code files → Dev, Documents → Knowledge
+**Also check**: What is being reviewed? Code files -> Dev, Documents -> Knowledge
 
 **Step 1b: Detect Dev Subtype** — see EXECUTION CONTRACT Step 1b above for subtype table and validation supplements. Append the matching supplement to the prompt before calling orchestrate.sh.
 
@@ -408,7 +405,7 @@ Providers:
 🔵 Claude - Synthesis and recommendations
 ```
 
-**This is NOT optional.** Users need to see which AI providers are active and understand they are being charged for external API calls (🔴 🟡).
+{{VISUAL_INDICATORS}}
 
 ---
 
@@ -486,7 +483,7 @@ Providers:
 ### Step 1: Invoke Ink Phase
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh deliver "<user's validation request>"
+${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh deliver "<user's validation request>"
 ```
 
 ### Step 2: Multi-Provider Validation
@@ -629,7 +626,7 @@ Claude:
 🐙 **CLAUDE OCTOPUS ACTIVATED** - Multi-provider validation
 ✅ Deliver Phase: Reviewing authentication implementation
 
-[Executes: ${CLAUDE_PLUGIN_ROOT}/scripts/orchestrate.sh deliver "Review authentication implementation in src/auth/"]
+[Executes: ${HOME}/.claude-octopus/plugin/scripts/orchestrate.sh deliver "Review authentication implementation in src/auth/"]
 
 [After completion, reads validation and presents:]
 
@@ -674,7 +671,7 @@ The authentication implementation is functional and follows most best practices,
 - No unit tests for edge cases
 
 **Code Examples**:
-```typescript
+\`\`\`typescript
 // Good: Proper error handling
 try {
   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
@@ -686,7 +683,7 @@ try {
 
 // Issue: Hardcoded secret (security risk)
 const JWT_SECRET = 'my-secret-key-123'; // Should be process.env.JWT_SECRET
-```
+\`\`\`
 
 ### Security Audit (Gemini Analysis)
 **Score**: 68/100
@@ -735,9 +732,9 @@ const JWT_SECRET = 'my-secret-key-123'; // Should be process.env.JWT_SECRET
 ## Next Steps
 
 1. **Immediate (Before Deploy)**:
-   - Fix hardcoded JWT secret → use process.env.JWT_SECRET
-   - Add rate limiting → npm install express-rate-limit
-   - Standardize error messages → update auth/controller.ts
+   - Fix hardcoded JWT secret -> use process.env.JWT_SECRET
+   - Add rate limiting -> npm install express-rate-limit
+   - Standardize error messages -> update auth/controller.ts
 
 2. **Short Term (Next Sprint)**:
    - Add unit tests for auth service
@@ -792,20 +789,7 @@ Before running conceptual quality gates, detect and run the project's actual lin
 - Report pass/fail results alongside quality gate scores
 - If quality commands are discovered but not in CLAUDE.md, suggest adding them
 
-**Quality Dimensions**:
-
-| Dimension | Weight | Criteria |
-|-----------|--------|----------|
-| **Code Quality** | 25% | Complexity, maintainability, documentation |
-| **Security** | 35% | OWASP compliance, auth, input validation |
-| **Best Practices** | 20% | Error handling, logging, testing |
-| **Completeness** | 20% | Feature completeness, edge cases |
-
-**Scoring Thresholds**:
-- **90-100**: Excellent - Ready for production
-- **75-89**: Good - Minor improvements recommended
-- **60-74**: Acceptable - Address warnings before deploy
-- **< 60**: Poor - Critical issues must be fixed
+{{QUALITY_GATES}}
 
 ---
 
@@ -818,10 +802,10 @@ PROBE (Discover) → GRASP (Define) → TANGLE (Develop) → INK (Deliver)
 ```
 
 **Complete workflow example:**
-1. **Probe**: "Research authentication best practices" → Discover options
-2. **Grasp**: "Define auth requirements" → Narrow to specific needs
-3. **Tangle**: "Implement JWT auth" → Build the solution
-4. **Ink**: "Validate auth implementation" → Ensure quality before ship
+1. **Probe**: "Research authentication best practices" -> Discover options
+2. **Grasp**: "Define auth requirements" -> Narrow to specific needs
+3. **Tangle**: "Implement JWT auth" -> Build the solution
+4. **Ink**: "Validate auth implementation" -> Ensure quality before ship
 
 Or use ink standalone for validation of existing code.
 
@@ -852,9 +836,33 @@ Ink workflows typically cost $0.02-0.08 per validation depending on codebase siz
 
 ---
 
+## Post-Validation: Documentation Sync
+
+After validation passes (go decision), run documentation synchronization to keep project docs current with shipped code. This step is **automatic** when running as part of `/octo:embrace` and **offered** when running standalone.
+
+**Invoke the doc-sync skill:**
+```
+Skill(skill: "octo:auto", args: "sync docs for the changes on this branch")
+```
+
+The doc-sync skill will:
+1. Read all `.md` files (max depth 2, cap 30 files)
+2. Cross-reference each against `git diff` to find stale content
+3. Auto-update factual corrections (paths, counts, version numbers)
+4. Ask about risky/narrative changes before editing
+5. Check cross-doc consistency and discoverability
+6. Commit doc changes to the branch
+
+**Skip conditions:** Skip doc-sync if:
+- No `.md` files exist in the project
+- The validation result was "no-go" (fix code first)
+- User explicitly requests to skip (`--no-docs` or declines when asked)
+
+---
+
 ## Post-Delivery: Route to Ship
 
-After delivery validation completes:
+After delivery validation and doc-sync complete:
 1. Update `.octo/STATE.md`:
    - status: "complete"
    - Add history entry: "All phases complete, ready to ship"
@@ -862,7 +870,7 @@ After delivery validation completes:
 
 ```bash
 # Update state after Delivery completion
-"${CLAUDE_PLUGIN_ROOT}/scripts/octo-state.sh" update_state \
+"${HOME}/.claude-octopus/plugin/scripts/octo-state.sh" update_state \
   --status "complete" \
   --history "All phases complete, ready to ship"
 
