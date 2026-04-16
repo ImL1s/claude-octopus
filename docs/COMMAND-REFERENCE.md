@@ -50,9 +50,9 @@ All slash commands use the `/octo:` namespace. The smart router command is `/oct
 
 | Command | Description |
 |---------|-------------|
-| `/octo:review` | Expert code review with quality assessment and PR comment posting |
+| `/octo:review` | Enhanced multi-LLM review for escalated code review and PR comment posting |
 | `/octo:staged-review` | Two-stage review: spec compliance then code quality |
-| `/octo:security` | Security audit with OWASP compliance |
+| `/octo:security` | Enhanced multi-LLM or adversarial security audit with OWASP coverage |
 | `/octo:debug` | Systematic debugging with root cause investigation |
 | `/octo:tdd` | Test-driven development with red-green-refactor |
 
@@ -618,7 +618,9 @@ NLSpec authoring — structured specification from multi-AI research.
 
 ### `/octo:review`
 
-Expert code review with comprehensive quality assessment and PR comment posting.
+Enhanced multi-LLM review with comprehensive quality assessment and PR comment posting.
+
+**Use Claude-native `/review` for ordinary review requests.** Use `/octo:review` when you want multiple model opinions, provider diversity, or stricter escalation.
 
 **Usage:**
 ```
@@ -659,7 +661,9 @@ Two-stage review pipeline: spec compliance then code quality.
 
 ### `/octo:security`
 
-Security audit with OWASP compliance and vulnerability detection.
+Enhanced multi-LLM or adversarial security audit with OWASP compliance and vulnerability detection.
+
+**Use Claude-native `/security-review` for ordinary security review requests.** Use `/octo:security` when you want escalated OWASP analysis, provider diversity, or adversarial validation.
 
 **Usage:**
 ```

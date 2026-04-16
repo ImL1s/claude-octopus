@@ -4,6 +4,8 @@
 
 **One prompt. Up to eight AI providers checking each other's work.** Claude Octopus turns Claude Code into a multi-LLM orchestration engine — Codex, Gemini, Copilot, Qwen, Ollama, Perplexity, and OpenRouter all contribute perspectives, then a 75% consensus gate catches disagreements before they ship.
 
+**Claude-native first, Octopus for escalation.** Use Claude-native `/init`, `/review`, and `/security-review` when Claude is enough. Use Octopus when you want multiple model opinions, adversarial review, or stricter multi-LLM workflows.
+
 ## What Changes
 
 Without Octopus, you ask one model and trust the answer. With it:
@@ -19,7 +21,7 @@ You get:    A structured comparison with three independent viewpoints,
             scored for agreement. Disagreements are flagged, not hidden.
 ```
 
-This works for research, code review, debugging, TDD, security audits, UI design, PRDs, and full build-to-ship workflows — 47 commands, 50 skills, 32 specialized personas.
+This works for research, escalated code review, debugging, TDD, escalated security audits, UI design, PRDs, and full build-to-ship workflows — 47 commands, 51 skills, 32 specialized personas.
 
 ## Install
 
@@ -37,8 +39,8 @@ Then run `/octo:setup` — it detects your providers, shows what's available, an
 | Research a topic with multiple AI perspectives | `/octo:research htmx vs react` |
 | Debate two approaches with structured scoring | `/octo:debate monorepo vs microservices` |
 | Build a feature end-to-end (research → ship) | `/octo:embrace build stripe integration` |
-| Review code with adversarial multi-model analysis | `/octo:review` |
-| Run a security audit (OWASP) | `/octo:security` |
+| Review code with enhanced multi-model analysis | `/octo:review` |
+| Run an escalated security audit (OWASP + adversarial) | `/octo:security` |
 | Write tests first, then code | `/octo:tdd create user auth` |
 | Go from spec to working software autonomously | `/octo:factory "CSV to JSON converter"` |
 | Just do something quick | `/octo:quick fix the login bug` |

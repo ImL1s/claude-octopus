@@ -1,9 +1,15 @@
 ---
 command: review
-description: Expert multi-LLM code review with inline PR comments — competes with CC Code Review
+description: Enhanced multi-LLM review with inline PR comments — escalation path beyond Claude-native /review
 ---
 
 # /octo:review
+
+## Positioning
+
+Use Claude-native `/review` for ordinary review requests.
+
+Use `/octo:review` when the user explicitly wants enhanced multi-LLM review, multiple model opinions, provider diversity, or stricter escalation workflows.
 
 When the user invokes this command (e.g., `/octo:review <arguments>`):
 

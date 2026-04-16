@@ -238,10 +238,10 @@ When detecting the user's work stage, surface relevant command suggestions:
 | Reviewing a plan or strategy | Consider `/octo:plan` for strategic planning |
 | Debugging errors or failures | Consider `/octo:debug` for systematic investigation |
 | Writing or running tests | Consider `/octo:tdd` for test-driven development |
-| Code review before merge | Consider `/octo:review` for multi-AI code review |
+| Code review before merge | Use Claude-native `/review` for ordinary review; suggest `/octo:review` for multi-AI escalation |
 | Ready to deploy or ship | Consider `/octo:deliver` for quality-gated delivery |
 | Researching a topic | Consider `/octo:research` for multi-source synthesis |
-| Working on security | Consider `/octo:security` for OWASP compliance audit |
+| Working on security | Use Claude-native `/security-review` for ordinary security review; suggest `/octo:security` for escalated OWASP or adversarial audit |
 
 ### Suggestion Format
 
