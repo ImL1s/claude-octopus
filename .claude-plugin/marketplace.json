@@ -11,7 +11,7 @@
     {
       "name": "octo",
       "source": "./",
-      "description": "Multi-LLM orchestration for Claude Code. Route tasks to Codex, Gemini, Perplexity, Copilot, Qwen, Ollama, OpenCode. 137 CC feature flags, token compression (~7K/session saved), interactive setup wizard. 32 personas, 48 commands, 51 skills. Run /octo:setup.",
+      "description": "v9.23.0 - Multi-LLM orchestration for Claude Code. Route tasks to Codex, Gemini, Perplexity, Copilot, Qwen, Ollama, OpenCode. 137 CC feature flags, token compression (~7K/session saved), interactive setup wizard. 32 personas, 48 commands, 52 skills. Run /octo:setup.",
       "version": "9.23.0",
       "author": {
         "name": "nyldn",
